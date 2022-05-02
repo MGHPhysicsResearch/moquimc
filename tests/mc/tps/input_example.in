@@ -1,0 +1,31 @@
+## Global parameters for simulation
+
+GPUID 0
+RandomSeed -1932780356 # (integer, use negative value if use current time)
+UseAbsolutePath false
+TotalThreads -1 #(Integer, use negative value for using optimized number of threads)
+MaxHistoriesPerBatch 0
+Verbosity 0
+
+## Data directories
+ParentDir # parent directory of DICOM files
+DicomDir # directory of the DICOM
+
+## Quantity to score
+Scorer Dose # Dose is dose to water. We support dose to medium, dose to water, track-weighted LET, dose-weighted LET. Modification in environment is needed to add selection
+SupressStd true
+ReadStructure false
+ROIName External
+
+## Source parameters
+SourceType FluenceMap
+SimulationType perBeam
+BeamNumbers 0
+ParticlesPerHistory 1000000 # Scale factor to select the number of primary particles
+
+ScoreToCTGrid true
+
+## Output path
+OutputDir # output directory
+OutputFormat raw # output format (raw, mhd, mha, npz)
+OverwriteResults true
