@@ -766,7 +766,7 @@ public:
                                sizeof(tracked_particles[0]),
                                cudaMemcpyHostToDevice));
         printf("transportatiopn call\n");
-        printf("hitories in batch %d\n", histories_in_batch);
+        printf("histories in batch %d\n", histories_in_batch);
         mc::transport_particles_patient<R><<<n_blocks, n_threads>>>(
           worker_threads, mc::mc_world, mc::mc_vertices, histories_in_batch, d_tracked_particles);
         cudaDeviceSynchronize();
@@ -918,7 +918,7 @@ public:
             uint32_t* score_offset_vector = new uint32_t[histories_per_batch];
             //            printf("num batches %d batch %d spot start %d\n",num_batches,batch, spot_start);
             start = std::chrono::high_resolution_clock::now();
-            printf("Generaing particles...\n");
+            printf("Generating particles...\n");
             for (spot_ind = spot_start; spot_ind < this->num_spots; spot_ind++) {
                 auto bl       = this->beamsource[spot_ind];
                 num_histories = std::get<1>(bl);
