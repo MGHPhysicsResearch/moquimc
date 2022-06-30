@@ -122,7 +122,8 @@ add_node_scorers(mqi::node_t<R>*         node,
                  uint32_t*               roi_original_length = nullptr,
                  uint32_t*               roi_length          = nullptr,
                  uint32_t**              roi_start           = nullptr,
-                 uint32_t**              roi_stride          = nullptr) {
+                 uint32_t**              roi_stride          = nullptr,
+                 uint32_t**              roi_acc_stride      = nullptr) {
 
     printf("Adding scorers node:%p, %d\n", node, n_scorers);
 
@@ -149,8 +150,12 @@ add_node_scorers(mqi::node_t<R>*         node,
         printf("scorer data[i] %p\n", scorers_data[i]);
         node->scorers[i]->data_ = scorers_data[i];
         //        node->scorers[i]->roi_  = roi[i];
-        node->scorers[i]->roi_ = new mqi::roi_t(
-          roi_method[i], roi_original_length[i], roi_length[i], roi_start[i], roi_stride[i]);
+        node->scorers[i]->roi_ = new mqi::roi_t(roi_method[i],
+                                                roi_original_length[i],
+                                                roi_length[i],
+                                                roi_start[i],
+                                                roi_stride[i],
+                                                roi_acc_stride[i]);
         //        printf("scorer[i] mask %p\n", node->scorers[i]->roi_mask_);
         if (scorers_count) {
             node->scorers[i]->count_    = scorers_count[i];
@@ -229,12 +234,14 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
 
     uint32_t**          h_roi_start         = nullptr;
     uint32_t**          h_roi_stride        = nullptr;
+    uint32_t**          h_roi_acc_stride    = nullptr;
     uint32_t*           roi_length          = nullptr;
     uint32_t*           roi_original_length = nullptr;
     mqi::roi_mapping_t* roi_method          = nullptr;
 
     uint32_t**          d_roi_start           = nullptr;
     uint32_t**          d_roi_stride          = nullptr;
+    uint32_t**          d_roi_acc_stride      = nullptr;
     uint32_t*           d_roi_length          = nullptr;
     uint32_t*           d_roi_original_length = nullptr;
     mqi::roi_mapping_t* d_roi_method          = nullptr;
@@ -255,6 +262,7 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
         fp                  = new mqi::fp_compute_hit<R>[c_node->n_scorers];
         h_roi_start         = new uint32_t*[c_node->n_scorers];
         h_roi_stride        = new uint32_t*[c_node->n_scorers];
+        h_roi_acc_stride    = new uint32_t*[c_node->n_scorers];
         roi_length          = new uint32_t[c_node->n_scorers];
         roi_original_length = new uint32_t[c_node->n_scorers];
         roi_method          = new mqi::roi_mapping_t[c_node->n_scorers];
@@ -265,6 +273,7 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
         gpu_err_chk(cudaMalloc(&d_fp, c_node->n_scorers * sizeof(mqi::fp_compute_hit<R>)));
         gpu_err_chk(cudaMalloc(&d_roi_start, c_node->n_scorers * sizeof(uint32_t*)));
         gpu_err_chk(cudaMalloc(&d_roi_stride, c_node->n_scorers * sizeof(uint32_t*)));
+        gpu_err_chk(cudaMalloc(&d_roi_acc_stride, c_node->n_scorers * sizeof(uint32_t*)));
         gpu_err_chk(cudaMalloc(&d_roi_length, c_node->n_scorers * sizeof(uint32_t)));
         gpu_err_chk(cudaMalloc(&d_roi_original_length, c_node->n_scorers * sizeof(uint32_t)));
         gpu_err_chk(cudaMalloc(&d_roi_method, c_node->n_scorers * sizeof(mqi::roi_mapping_t)));
@@ -298,6 +307,8 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
               cudaMalloc(&h_roi_start[i], c_node->scorers[i]->roi_->length_ * sizeof(uint32_t)));
             gpu_err_chk(
               cudaMalloc(&h_roi_stride[i], c_node->scorers[i]->roi_->length_ * sizeof(uint32_t)));
+            gpu_err_chk(cudaMalloc(&h_roi_acc_stride[i],
+                                   c_node->scorers[i]->roi_->length_ * sizeof(uint32_t)));
             if (c_node->scorers[i]->roi_->length_ > 0) {
                 gpu_err_chk(cudaMemcpy(h_roi_start[i],
                                        c_node->scorers[i]->roi_->start_,
@@ -307,9 +318,14 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
                                        c_node->scorers[i]->roi_->stride_,
                                        c_node->scorers[i]->roi_->length_ * sizeof(uint32_t),
                                        cudaMemcpyHostToDevice));
+                gpu_err_chk(cudaMemcpy(h_roi_acc_stride[i],
+                                       c_node->scorers[i]->roi_->acc_stride_,
+                                       c_node->scorers[i]->roi_->length_ * sizeof(uint32_t),
+                                       cudaMemcpyHostToDevice));
             } else {
-                h_roi_start[i]  = nullptr;
-                h_roi_stride[i] = nullptr;
+                h_roi_start[i]      = nullptr;
+                h_roi_stride[i]     = nullptr;
+                h_roi_acc_stride[i] = nullptr;
             }
             if (c_node->scorers[i]->score_variance_) {
                 gpu_err_chk(cudaMalloc(&h_scorers_count[i],
@@ -367,6 +383,10 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
           d_roi_start, h_roi_start, c_node->n_scorers * sizeof(uint32_t*), cudaMemcpyHostToDevice));
         gpu_err_chk(cudaMemcpy(d_roi_stride,
                                h_roi_stride,
+                               c_node->n_scorers * sizeof(uint32_t*),
+                               cudaMemcpyHostToDevice));
+        gpu_err_chk(cudaMemcpy(d_roi_acc_stride,
+                               h_roi_acc_stride,
                                c_node->n_scorers * sizeof(uint32_t*),
                                cudaMemcpyHostToDevice));
         if (h_scorers_count) {
@@ -458,7 +478,8 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
                                           d_roi_original_length,
                                           d_roi_length,
                                           d_roi_start,
-                                          d_roi_stride);
+                                          d_roi_stride,
+                                          d_roi_acc_stride);
     } else {
         mc::add_node_scorers<R><<<1, 1>>>(g_node);
     }
@@ -485,6 +506,7 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
     gpu_err_chk(cudaFree(d_roi_length));
     gpu_err_chk(cudaFree(d_roi_start));
     gpu_err_chk(cudaFree(d_roi_stride));
+    gpu_err_chk(cudaFree(d_roi_acc_stride));
     //    gpu_err_chk(cudaFree(d_roi));             // it's working, but not sure it is required
 }   //upload_node
 
