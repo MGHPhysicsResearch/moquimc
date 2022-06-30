@@ -305,7 +305,7 @@ public:
             pos_prev    = pos_current + 1;
             pos_current = value.find(delimeter1, pos_prev);
         }
-        temp = value.substr(pos_prev, pos_current - pos_prev);
+        temp = trim_copy(value.substr(pos_prev, pos_current - pos_prev));
         if (temp.size() > 0) { values.push_back(temp); }
         return values;
     }
