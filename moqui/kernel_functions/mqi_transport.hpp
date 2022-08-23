@@ -134,9 +134,12 @@ transport_particles_patient(mqi::thrd_t*      threads,
                 mqi::grid3d<mqi::density_t, R>& c_geo = *(world->children[c_ind]->geo);
                 track.c_node                          = world->children[c_ind];
                 nb_of_scorers                         = track.c_node->n_scorers;
+                //                track.vtx0.pos =c_geo.rotation_matrix_inv * (track.vtx0.pos - c_geo.translation_vector) +c_geo.translation_vector;   // rotate the vertex
+                //                track.vtx0.dir =c_geo.rotation_matrix_inv * (track.vtx0.dir);   // rotate the vertex
                 track.vtx0.pos =
-                  c_geo.rotation_matrix_inv * (track.vtx0.pos - c_geo.translation_vector) +
-                  c_geo.translation_vector;   // rotate the vertex
+                  c_geo.rotation_matrix_inv *
+                  (track.vtx0.pos -
+                   c_geo.translation_vector);   // +c_geo.translation_vector;   // rotate the vertex
                 track.vtx0.dir =
                   c_geo.rotation_matrix_inv * (track.vtx0.dir);   // rotate the vertex
                 track.vtx0.dir.normalize();
@@ -147,9 +150,10 @@ transport_particles_patient(mqi::thrd_t*      threads,
                     track.its =
                       c_geo.intersect(track.vtx0.pos, track.vtx0.dir);   // The first intersection
                     if (track.its.dist < 0) {
+                        //                        track.vtx0.pos = c_geo.rotation_matrix_fwd * (track.vtx0.pos - c_geo.translation_vector) + c_geo.translation_vector;
+                        //                        track.vtx0.dir = c_geo.rotation_matrix_fwd * (track.vtx0.dir);   // rotate the vertex
                         track.vtx0.pos =
-                          c_geo.rotation_matrix_fwd * (track.vtx0.pos - c_geo.translation_vector) +
-                          c_geo.translation_vector;
+                          c_geo.rotation_matrix_fwd * (track.vtx0.pos) + c_geo.translation_vector;
                         track.vtx0.dir =
                           c_geo.rotation_matrix_fwd * (track.vtx0.dir);   // rotate the vertex
                         track.vtx1.pos = track.vtx0.pos;
@@ -210,11 +214,11 @@ transport_particles_patient(mqi::thrd_t*      threads,
                         track.move();
                     }
                 }
+                //                track.vtx0.pos = c_geo.rotation_matrix_fwd * (track.vtx0.pos - c_geo.translation_vector) + c_geo.translation_vector;
+                //                track.vtx0.dir = c_geo.rotation_matrix_fwd * (track.vtx0.dir);   // rotate the vertex
                 track.vtx0.pos =
-                  c_geo.rotation_matrix_fwd * (track.vtx0.pos - c_geo.translation_vector) +
-                  c_geo.translation_vector;
-                track.vtx0.dir =
-                  c_geo.rotation_matrix_fwd * (track.vtx0.dir);   // rotate the vertex
+                  c_geo.rotation_matrix_fwd * track.vtx0.pos + c_geo.translation_vector;
+                track.vtx0.dir = c_geo.rotation_matrix_fwd * track.vtx0.dir;   // rotate the vertex
                 track.vtx1.pos = track.vtx0.pos;
                 track.vtx1.dir = track.vtx0.dir;
             }   //while(history is out-of-world or zero energy
@@ -283,9 +287,12 @@ transport_particles_patient_seed(mqi::thrd_t*      threads,
                 mqi::grid3d<mqi::density_t, R>& c_geo = *(world->children[c_ind]->geo);
                 track.c_node                          = world->children[c_ind];
                 nb_of_scorers                         = track.c_node->n_scorers;
+                //                track.vtx0.pos = c_geo.rotation_matrix_inv * (track.vtx0.pos - c_geo.translation_vector) + c_geo.translation_vector;   // rotate the vertex
+                //                track.vtx0.dir = c_geo.rotation_matrix_inv * (track.vtx0.dir);   // rotate the vertex
                 track.vtx0.pos =
-                  c_geo.rotation_matrix_inv * (track.vtx0.pos - c_geo.translation_vector) +
-                  c_geo.translation_vector;   // rotate the vertex
+                  c_geo.rotation_matrix_inv *
+                  (track.vtx0.pos -
+                   c_geo.translation_vector);   // +c_geo.translation_vector;   // rotate the vertex
                 track.vtx0.dir =
                   c_geo.rotation_matrix_inv * (track.vtx0.dir);   // rotate the vertex
                 track.vtx0.dir.normalize();
@@ -296,9 +303,10 @@ transport_particles_patient_seed(mqi::thrd_t*      threads,
                     track.its =
                       c_geo.intersect(track.vtx0.pos, track.vtx0.dir);   // The first intersection
                     if (track.its.dist < 0) {
+                        //                        track.vtx0.pos = c_geo.rotation_matrix_fwd * (track.vtx0.pos - c_geo.translation_vector) + c_geo.translation_vector;
+                        //                        track.vtx0.dir = c_geo.rotation_matrix_fwd * (track.vtx0.dir);   // rotate the vertex
                         track.vtx0.pos =
-                          c_geo.rotation_matrix_fwd * (track.vtx0.pos - c_geo.translation_vector) +
-                          c_geo.translation_vector;
+                          c_geo.rotation_matrix_fwd * (track.vtx0.pos) + c_geo.translation_vector;
                         track.vtx0.dir =
                           c_geo.rotation_matrix_fwd * (track.vtx0.dir);   // rotate the vertex
                         track.vtx1.pos = track.vtx0.pos;
@@ -360,11 +368,11 @@ transport_particles_patient_seed(mqi::thrd_t*      threads,
                     }
                 }
 
+                //                track.vtx0.pos = c_geo.rotation_matrix_fwd * (track.vtx0.pos - c_geo.translation_vector) + c_geo.translation_vector;
+                //                track.vtx0.dir = c_geo.rotation_matrix_fwd * (track.vtx0.dir);   // rotate the vertex
                 track.vtx0.pos =
-                  c_geo.rotation_matrix_fwd * (track.vtx0.pos - c_geo.translation_vector) +
-                  c_geo.translation_vector;
-                track.vtx0.dir =
-                  c_geo.rotation_matrix_fwd * (track.vtx0.dir);   // rotate the vertex
+                  c_geo.rotation_matrix_fwd * track.vtx0.pos + c_geo.translation_vector;
+                track.vtx0.dir = c_geo.rotation_matrix_fwd * track.vtx0.dir;   // rotate the vertex
                 track.vtx1.pos = track.vtx0.pos;
                 track.vtx1.dir = track.vtx0.dir;
             }   //while(history is out-of-world or zero energy
