@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(env)
+project(phantom)
 
 set(GPU ON)
 
@@ -39,22 +39,19 @@ else ()
 endif ()
 
 find_package(GDCM REQUIRED)
-include(${GDCM_USE_FILE})
-
 find_package(ZLIB REQUIRED)
 
 if (APPLE)
     find_library(COREFOUNDATION_LIBRARY CoreFoundation)
 endif ()
 
-include_directories(
+target_include_directories(phantom_env PUBLIC
         ${PROJECT_SOURCE_DIR}
         ${GDCM_INCLUDE_DIRS}
         ../../../
-        /usr/local/cuda/include
 )
 
-link_directories(${GDCM_DIR})
+target_link_directories(phantom_env PUBLIC ${GDCM_DIR})
 
 target_link_libraries(phantom_env
         ${COREFOUNDATION_LIBRARY}

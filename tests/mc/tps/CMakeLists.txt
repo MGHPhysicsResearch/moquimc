@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(env)
+project(tps)
 
 set(GPU ON)
 
@@ -37,8 +37,6 @@ else ()
 endif ()
 
 find_package(GDCM REQUIRED)
-include(${GDCM_USE_FILE})
-
 find_package(ZLIB REQUIRED)
 
 if (APPLE)
