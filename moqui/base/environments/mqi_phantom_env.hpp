@@ -165,7 +165,7 @@ public:
 
         if (cli["--phantom_path"].size() >= 1) {
             this->phantom_path = cli["--phantom_path"][0];
-            printf("phantom path: %s\n", this->output_path.c_str());
+            printf("phantom path: %s\n", this->phantom_path.c_str());
         } else {
             throw std::runtime_error("phantom_path is required.");
         }
