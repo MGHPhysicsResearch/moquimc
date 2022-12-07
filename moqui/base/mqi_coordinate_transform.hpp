@@ -34,7 +34,7 @@ public:
     vec3<T> translation;
 
     ///< rotation
-    std::array<T, 4> angles = { 0.0, 0.0, 0.0, 0.0 };
+    std::array<T, 4> angles { 0.0, 0.0, 0.0, 0.0 };
 
     /// rotation matrices
     mat3x3<T> collimator;        ///< Rotation due to collimator angle
@@ -72,8 +72,7 @@ public:
 
     /// A copy constructor
     CUDA_HOST_DEVICE
-    coordinate_transform(const coordinate_transform<T>& ref) {
-        angles          = ref.angles;
+    coordinate_transform(const coordinate_transform<T>& ref) : angles(ref.angles) {
         collimator      = ref.collimator;
         gantry          = ref.gantry;
         patient_support = ref.patient_support;
@@ -84,7 +83,7 @@ public:
 
     /// Destructor
     CUDA_HOST_DEVICE
-    coordinate_transform() {
+    coordinate_transform() : angles() {
         ;
     }
 
