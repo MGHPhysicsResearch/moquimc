@@ -6,9 +6,10 @@ if (GPU)
     set_source_files_properties(phantom_env.cpp PROPERTIES LANGUAGE CUDA)
 endif ()
 
+find_package (Python3 COMPONENTS Interpreter Development)
+
 target_include_directories(phantom_env PUBLIC
         ${PROJECT_SOURCE_DIR}
-        ${GDCM_INCLUDE_DIRS}
         ../../../
 )
 
@@ -16,15 +17,6 @@ target_link_directories(phantom_env PUBLIC ${GDCM_DIR})
 
 target_link_libraries(phantom_env
         ${COREFOUNDATION_LIBRARY}
-        gdcmCommon
-        gdcmDSED
-        gdcmMEXD
-        gdcmjpeg12
-        gdcmjpeg8
-        gdcmDICT
-        gdcmIOD
-        gdcmMSFF
-        gdcmjpeg16
         ZLIB::ZLIB
         )
 
@@ -32,6 +24,6 @@ target_link_libraries(phantom_env
 add_test(
     NAME phantom_env
     COMMAND
-        bash -c "python3 ${PROJECT_SOURCE_DIR}/create_phantom.py ; \
+        bash -c "${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/create_phantom.py ; \
         ${CMAKE_CURRENT_BINARY_DIR}/phantom_env --lxyz 100 100 350 --pxyz 0.0 0.0 -175 --nxyz 200 200 350 --spot_energy 200.0 0.0 --spot_position 0 0 0.5 --spot_size 30.0 30.0 --histories 100000 --phantom_path /tmp/water_phantom.raw --output_prefix ./ --gpu_id 0"
 )
