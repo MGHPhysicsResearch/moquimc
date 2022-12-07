@@ -5,7 +5,8 @@ MOnte carlo code for QUIck proton dose calculation (moqui)
 
 ### Installation
 #### Requirements
-- GDCM (Please refer to GDCM v2 [installation guide](http://gdcm.sourceforge.net/wiki/index.php/Compilation#Quick_start))
+- GDCM (Please refer to GDCM v2 [installation guide](http://gdcm.sourceforge.net/wiki/index.php/Compilation#Quick_start)) (libgdcm-dev in Ubuntu 22)
+    - If you get spurious warnings in CMake, and they annoy you, consider installing (Ubuntu 22): libgdcm-tools libvtkgdcm-cil libvtkgdcm-dev libvtkgdcm-java python3-vtkgdcm
 - CUDA
 - ZLIB
 - The code has been tested with GDCM v2 and CUDA v10.2, as well as GDCM v3 and CUDA v8.0
