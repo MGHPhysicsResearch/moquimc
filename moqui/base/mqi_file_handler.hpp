@@ -282,7 +282,7 @@ public:
             pos = parameters_total[line].find(delimeter);
             if (pos != std::string::npos) {
                 option_in = trim_copy(parameters_total[line].substr(0, pos));
-                if (strcasecmp(option.c_str(), option_in.c_str()) == 0) {
+                if (strcasecmp(option.c_str(), option_in.c_str()) == 0 && (pos+1) != parameters_total[line].length()) {
                     value = trim_copy(parameters_total[line].substr(pos + 1, std::string::npos));
                     return value;
                 }
