@@ -23,7 +23,7 @@ $ cd build
 $ cmake ..
 $ make
 ```
-- You can specify a custom CUDA path in the cmake command, for example: `-DCMAKE_CUDA_COMPILER=/opt/cuda-8.0/bin/nvcc`. The default is the nvcc found within thhe PATH environment variable.
+- You can specify a custom CUDA path in the cmake command, for example: `-DCUDAToolkit_ROOT=/opt/cuda-8.0 -DCMAKE_CUDA_COMPILER=/opt/cuda-8.0/bin/nvcc`. The default is the nvcc found within thhe PATH environment variable.
 - You can specify a custom CUDA compute capability via `-DCMAKE_CUDA_ARCHITECTURES=20`. The default is to use CUDA compute capability 7.5
 
 #### Running the phantom example
