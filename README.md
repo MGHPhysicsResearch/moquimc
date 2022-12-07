@@ -10,6 +10,7 @@ MOnte carlo code for QUIck proton dose calculation (moqui)
 - CUDA
 - ZLIB
 - The code has been tested with GDCM v2 and CUDA v10.2, as well as GDCM v3 and CUDA v8.0
+- Python3 (for phantom example)
 
 #### Obtaining the code
 ```bash
