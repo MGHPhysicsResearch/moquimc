@@ -17,7 +17,9 @@ $ git clone https://github.com/mghro/moquimc.git
 #### Compile the phantom case
 ```bash
 $ cd moquimc/tests/mc/phantom
-$ cmake .
+$ mkdir build
+$ cd build
+$ cmake ..
 $ make
 ```
 - You may need to modify the CUDA configuration on the CMakeList.txt
