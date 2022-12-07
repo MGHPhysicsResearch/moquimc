@@ -1,5 +1,5 @@
 MOnte carlo code for QUIck proton dose calculation (moqui)
-=======
+==========================================================
 
 <img src="images/moqui_logo.jpg">
 
@@ -7,7 +7,8 @@ MOnte carlo code for QUIck proton dose calculation (moqui)
 #### Requirements
 - GDCM (Please refer to GDCM v2 [installation guide](http://gdcm.sourceforge.net/wiki/index.php/Compilation#Quick_start))
 - CUDA
-- The code has been tested with GDCM v2 and CUDA v10.2
+- ZLIB
+- The code has been tested with GDCM v2 and CUDA v10.2, as well as GDCM v3 and CUDA v8.0
 
 #### Obtaining the code
 ```bash

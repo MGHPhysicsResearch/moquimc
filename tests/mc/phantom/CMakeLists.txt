@@ -32,6 +32,8 @@ endif ()
 find_package(GDCM REQUIRED)
 include(${GDCM_USE_FILE})
 
+find_package(ZLIB REQUIRED)
+
 if (APPLE)
     find_library(COREFOUNDATION_LIBRARY CoreFoundation)
 endif ()
@@ -56,4 +58,5 @@ target_link_libraries(phantom_env
         gdcmIOD
         gdcmMSFF
         gdcmjpeg16
+        ZLIB::ZLIB
         )
