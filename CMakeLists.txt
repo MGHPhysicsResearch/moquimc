@@ -30,6 +30,19 @@ if (GPU)
             set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets") # silence warnings
         endif()
     endif()
+
+    ### When in debug mode: separate compilation and device debugging
+    # Remember setting in QtCreator cuda-gdb as debugger in the Compiler kit
+    if (CMAKE_BUILD_TYPE STREQUAL Debug)
+        #set(SEPARATE_COMPILATION ON CACHE BOOL "Compile each source file separately. Results in less optimized code but good for debugging.")
+        #set(DEVICE_DEBUGGING ON CACHE BOOL "Debug device code.")
+        set(CMAKE_CUDA_FLAGS "-G -g -Xcompiler -Wall ${CMAKE_CUDA_FLAGS}")#-rdynamic
+    endif()
+
+    #~ if (SEPARATE_COMPILATION)
+    #set(CUDA_SEPARABLE_COMPILATION ON)
+    #set_property(TARGET myexe PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+
 else ()
     enable_language(CXX)
     if(NOT DEFINED CMAKE_CXX_STANDARD)
