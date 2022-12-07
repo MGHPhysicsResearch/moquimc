@@ -284,6 +284,10 @@ public:
         mqi::patient_material_t<R> patient_material;
         int16_t*                   ph = new int16_t[nxyz.x * nxyz.y * nxyz.z];
         std::ifstream              ph_fid(this->phantom_path, std::ios::in | std::ios::binary);
+        if(!ph_fid.good())
+        {
+            throw std::runtime_error("phantom file does not exist");
+        }
         ph_fid.read((char*) (&ph[0]), nxyz.x * nxyz.y * nxyz.z * sizeof(ph[0]));
         ph_fid.close();
         for (int i = 0; i < nxyz.x * nxyz.y * nxyz.z; i++) {
