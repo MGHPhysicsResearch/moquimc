@@ -19,7 +19,7 @@ $ git clone https://github.com/mghro/moquimc.git
 
 #### Compile the phantom case
 ```bash
-$ cd moquimc/tests/mc/phantom
+$ cd moquimc
 $ mkdir build
 $ cd build
 $ cmake ..
