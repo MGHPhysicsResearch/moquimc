@@ -22,8 +22,8 @@ $ cd build
 $ cmake ..
 $ make
 ```
-- You may need to modify the CUDA configuration on the CMakeList.txt
-- The default is to use CUDA compute capability 7.5
+- You can specify a custom CUDA path in the cmake command, for example: `-DCUDAToolkit_ROOT=/opt/cuda-8.0 -DCMAKE_CUDA_COMPILER=/opt/cuda-8.0/bin/nvcc`
+- The default is to use CUDA compute capability 7.5, and the nvcc in PATH
 
 #### Running the phantom example
 ```bash
