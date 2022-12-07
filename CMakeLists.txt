@@ -21,7 +21,7 @@ if (GPU)
         set(CMAKE_CUDA_STANDARD 11)
         set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     endif()
-    message("-- Compile using ${CMAKE_CUDA_COMPILER} ${CMAKE_CUDA_COMPILER_VERSION}")
+    message(STATUS "Compile using ${CMAKE_CUDA_COMPILER} ${CMAKE_CUDA_COMPILER_VERSION}")
 
     set(CMAKE_CUDA_ARCHITECTURES 75 CACHE STRING "CUDA architectures")
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -w --use_fast_math")
@@ -36,9 +36,14 @@ else ()
         set(CMAKE_CXX_STANDARD 11)
         set(CMAKE_CXX_STANDARD_REQUIRED ON)
     endif()
-    message("-- Compile using ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_VERSION}")
+    message(STATUS "Compile using ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_VERSION}")
 endif ()
 
-add_subdirectory(tests/mc/phantom)
-add_subdirectory(tests/mc/tps)
+option(ENABLE_TESTS "Enables end-to-end integration tests using CTest framework." ON)
+
+if(ENABLE_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
 

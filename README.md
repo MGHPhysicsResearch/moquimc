@@ -29,9 +29,15 @@ $ make
 
 #### Running the phantom example
 ```bash
-$ python create_phantom.py # create water phantom
-$ ./phantom_env --lxyz 100 100 350 --pxyz 0.0 0.0 -175 --nxyz 200 200 350 --spot_energy 200.0 0.0 --spot_position 0 0 0.5 --spot_size 30.0 30.0 --histories 100000 --phantom_path ./water_phantom.raw --output_prefix ./ --gpu_id 0 > ./log.out
+$ python create_phantom.py # create water phantom in /tmp/, find script inside tests/mc/phantom folder
+$ ./tests/mc/phantom/phantom_env --lxyz 100 100 350 --pxyz 0.0 0.0 -175 --nxyz 200 200 350 --spot_energy 200.0 0.0 --spot_position 0 0 0.5 --spot_size 30.0 30.0 --histories 100000 --phantom_path /tmp/water_phantom.raw --output_prefix ./ --gpu_id 0 > ./log.out
 ```
+
+Or simply:
+```bash
+$ ctest -V -R phantom_env
+```
+
 
 ### Authors
 Hoyeon Lee    
