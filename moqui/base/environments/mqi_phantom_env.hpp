@@ -160,7 +160,7 @@ public:
             this->output_path = cli["--output_prefix"][0];
             printf("%s\n", this->output_path.c_str());
         } else {
-            throw std::runtime_error("output_path is required.");
+            throw std::runtime_error("output_prefix is required.");
         }
 
         if (cli["--phantom_path"].size() >= 1) {
