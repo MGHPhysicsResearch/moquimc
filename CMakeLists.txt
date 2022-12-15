@@ -50,6 +50,7 @@ if (USE_CUDA)
         #set(DEVICE_DEBUGGING ON CACHE BOOL "Debug device code.")
         set(CMAKE_CUDA_FLAGS_DEBUG "-G -g -Xcompiler -Wall ${CMAKE_CUDA_FLAGS_DEBUG}")#-rdynamic
         #TODO, if you want profiling at high speed, use -lineinfo instead of -G
+        #See also --source-in-ptx https://gitlab.kitware.com/cmake/cmake/-/issues/19017
     endif()
 
     #~ if (SEPARATE_COMPILATION)
