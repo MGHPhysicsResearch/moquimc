@@ -8,13 +8,25 @@ if (APPLE)
     find_library(COREFOUNDATION_LIBRARY CoreFoundation)
 endif ()
 
-set(GPU ON)
+### Set release mode as default build type
+set(default_build_type "Release")
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
+  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")# "MinSizeRel" "RelWithDebInfo"
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL Debug)
 add_definitions(-D__PHYSICS_DEBUG__)
+endif()
+
+set(USE_CUDA ON)
 
 # The extension of the main code should be cpp to compile it using g++
 # for CPU version and using nvcc for GPU version.
 # It will not be compiled using g++ if the extension is cu
-if (GPU)
+if (USE_CUDA)
     find_package(CUDAToolkit REQUIRED)
     enable_language(CUDA)
     if(NOT DEFINED CMAKE_CUDA_STANDARD)
@@ -36,7 +48,7 @@ if (GPU)
     if (CMAKE_BUILD_TYPE STREQUAL Debug)
         #set(SEPARATE_COMPILATION ON CACHE BOOL "Compile each source file separately. Results in less optimized code but good for debugging.")
         #set(DEVICE_DEBUGGING ON CACHE BOOL "Debug device code.")
-        set(CMAKE_CUDA_FLAGS "-G -g -Xcompiler -Wall ${CMAKE_CUDA_FLAGS}")#-rdynamic
+        set(CMAKE_CUDA_FLAGS_DEBUG "-G -g -Xcompiler -Wall ${CMAKE_CUDA_FLAGS_DEBUG}")#-rdynamic
     endif()
 
     #~ if (SEPARATE_COMPILATION)
@@ -54,9 +66,7 @@ endif ()
 
 add_subdirectory(moqui)
 
-
 option(ENABLE_TESTS "Enables end-to-end integration tests using CTest framework." ON)
-
 if(ENABLE_TESTS)
     enable_testing()
     add_subdirectory(tests)

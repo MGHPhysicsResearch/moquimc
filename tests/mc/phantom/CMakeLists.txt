@@ -1,7 +1,7 @@
 project(phantom)
 
 add_executable(phantom_env phantom_env.cpp)
-if (GPU)
+if (USE_CUDA)
     set_property(TARGET phantom_env PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
     set_source_files_properties(phantom_env.cpp PROPERTIES LANGUAGE CUDA)
 endif ()
