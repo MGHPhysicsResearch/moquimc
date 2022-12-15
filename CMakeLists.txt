@@ -49,6 +49,7 @@ if (USE_CUDA)
         #set(SEPARATE_COMPILATION ON CACHE BOOL "Compile each source file separately. Results in less optimized code but good for debugging.")
         #set(DEVICE_DEBUGGING ON CACHE BOOL "Debug device code.")
         set(CMAKE_CUDA_FLAGS_DEBUG "-G -g -Xcompiler -Wall ${CMAKE_CUDA_FLAGS_DEBUG}")#-rdynamic
+        #TODO, if you want profiling at high speed, use -lineinfo instead of -G
     endif()
 
     #~ if (SEPARATE_COMPILATION)
