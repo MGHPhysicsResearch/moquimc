@@ -5,3 +5,14 @@ file(GLOB header_files CONFIGURE_DEPENDS
         "*/*/*.hpp"
 )
 target_sources(moqui PRIVATE ${header_files})
+target_link_libraries(moqui INTERFACE
+    gdcmCommon
+    gdcmDSED
+    gdcmMEXD
+    gdcmjpeg12
+    gdcmjpeg8
+    gdcmDICT
+    gdcmIOD
+    gdcmMSFF
+    gdcmjpeg16
+)

@@ -9,15 +9,6 @@ endif ()
 target_link_libraries(tps_env PUBLIC
         moqui
         ${COREFOUNDATION_LIBRARY}
-        gdcmCommon
-        gdcmDSED
-        gdcmMEXD
-        gdcmjpeg12
-        gdcmjpeg8
-        gdcmDICT
-        gdcmIOD
-        gdcmMSFF
-        gdcmjpeg16
         ZLIB::ZLIB
         )
 
