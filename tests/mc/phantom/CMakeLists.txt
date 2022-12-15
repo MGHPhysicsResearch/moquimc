@@ -8,14 +8,8 @@ endif ()
 
 find_package (Python3 COMPONENTS Interpreter Development)
 
-target_include_directories(phantom_env PUBLIC
-        ${PROJECT_SOURCE_DIR}
-        ../../../
-)
-
-target_link_directories(phantom_env PUBLIC ${GDCM_DIR})
-
-target_link_libraries(phantom_env
+target_link_libraries(phantom_env PUBLIC
+        moqui
         ${COREFOUNDATION_LIBRARY}
         ZLIB::ZLIB
         )

@@ -6,15 +6,8 @@ if (GPU)
     set_source_files_properties(tps_env.cpp PROPERTIES LANGUAGE CUDA)
 endif ()
 
-target_include_directories(tps_env PUBLIC
-        ${PROJECT_SOURCE_DIR}
-        ${GDCM_INCLUDE_DIRS}
-        ../../../
-)
-
-target_link_directories(tps_env PUBLIC ${GDCM_DIR})
-
-target_link_libraries(tps_env
+target_link_libraries(tps_env PUBLIC
+        moqui
         ${COREFOUNDATION_LIBRARY}
         gdcmCommon
         gdcmDSED

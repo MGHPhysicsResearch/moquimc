@@ -52,6 +52,9 @@ else ()
     message(STATUS "Compile using ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_VERSION}")
 endif ()
 
+add_subdirectory(moqui)
+
+
 option(ENABLE_TESTS "Enables end-to-end integration tests using CTest framework." ON)
 
 if(ENABLE_TESTS)
