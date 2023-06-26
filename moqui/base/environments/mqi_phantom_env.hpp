@@ -223,7 +223,7 @@ public:
         mqi::coordinate_transform<R> p_coord(spot_angles, { 0, 0, 0 });   //angles, isocenter
         /// Source direction is -Z
         mqi::vec3<R> dir(0, 0, -1);
-        ///< Beamlet phse-space distribution
+        ///< Beamlet phase-space distribution
         std::array<R, 6> beamlet_mean = {
             spot_position[0], spot_position[1], spot_position[2], dir.x, dir.y, dir.z
         };
