@@ -14,7 +14,7 @@ MOnte carlo code for QUIck proton dose calculation (moqui)
 
 #### Obtaining the code
 ```bash
-$ git clone https://github.com/mghro/moquimc.git
+$ git clone https://github.com/ferdymercury/moquimc.git
 ```
 
 #### Compile the phantom case
