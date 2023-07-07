@@ -40,7 +40,6 @@ if (USE_CUDA)
     if(20 IN_LIST CMAKE_CUDA_ARCHITECTURES)
         if (${CMAKE_CUDA_COMPILER_VERSION} VERSION_LESS_EQUAL 9.0.0)
             set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets") # silence warnings
-            string(REGEX REPLACE "([\\/\\-]O)3" "\\10" CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE}")
         endif()
     endif()
 
