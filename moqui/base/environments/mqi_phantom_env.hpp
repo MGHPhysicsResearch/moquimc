@@ -89,11 +89,10 @@ public:
             spot_position[2] = 0.0;
         }
 
-        ///< Beam position
+        ///< Beam spatial spread
         if (cli["--spot_size"].size() >= 1) {
             spot_size[0] = std::stof(cli["--spot_size"][0]);
             spot_size[1] = std::stof(cli["--spot_size"][1]);
-
         } else {
             spot_size[0] = 0.0;
             spot_size[1] = 0.0;
