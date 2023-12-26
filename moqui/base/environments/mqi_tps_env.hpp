@@ -83,6 +83,7 @@ public:
     std::string delimeter        = " ";
     int         master_seed      = 0;
     std::string machine_name     = "";
+    std::string calibration_name = "";
     bool        score_to_ct_grid = true;
     std::string output_path      = "";
     std::string output_format =
@@ -162,6 +163,9 @@ public:
         cudaSetDevice(this->gpu_id);
 #endif
         master_seed = parser.get_int("RandomSeed", -1);
+        if (master_seed == -1) {
+            master_seed = std::time(nullptr);
+        }
         printf("master seed %d\n", master_seed);
         use_absolute_path = parser.get_bool("UseAbsolutePath", false);
 
@@ -184,7 +188,6 @@ public:
             this->ct_name   = parser.get_string("CTVolumeName", "");
             this->ct_path   = this->parent_dir + "/" + this->ct_name;
         }
-        std::cout << parent_dir.empty() << std::endl;
         if (parent_dir.empty()) {
             throw std::runtime_error("ParentDir is not provided");
         }
@@ -199,6 +202,9 @@ public:
         this->rbe                   = parser.get_float("RBE", 1.1);
         this->n_fractions           = parser.get_int("NumberOfFraction", -1);
         this->rangeshifter_density  = parser.get_float("RangeshifterDensity", 1.19);
+        this->unit_weights          = parser.get_int("UnitWeights", -1);
+        this->machine_name          = parser.get_string("Machine", "");
+        this->calibration_name      = parser.get_string("Calibration", "default");
         /// Scorer parameters
         this->scorer_string = parser.get_string_vector("Scorer", ",");
         this->scorer_type   = parser.strings_to_scorer_types(this->scorer_string);
@@ -212,6 +218,7 @@ public:
                 }
             }
         }
+
         //        score_variance          = !parser.get_bool("SupressStd", true);
         score_to_ct_grid        = parser.get_bool("ScoreToCTGrid", true);
         scoring_mask            = parser.get_bool("ScoringMask", false);
@@ -278,6 +285,7 @@ public:
                 throw std::runtime_error("Statistical criteria must be positive float");
             }
         }
+
         this->stat_roi_mask_filenames    = parser.get_string_vector("StatROIMaskFilename", ",");
         this->set_stat_roi_from_rtstruct = parser.get_bool("StatROIStructFromRT", false);
         if (this->set_stat_roi_from_rtstruct) {
@@ -286,6 +294,8 @@ public:
                 throw std::runtime_error("Statistical ROI is not provided.");
             }
         }
+        std::cout << parent_dir << std::endl;
+
         this->stat_threshold = parser.get_float("StatThreshold", 0.0);
         if (this->record_statistics) {
             if (!this->set_stat_roi_from_rtstruct && this->stat_roi_mask_filenames.size() == 0) {
@@ -308,11 +318,17 @@ public:
         ///Initialize data
         this->dcm_ = this->read_dcm_dir();
         printf("%s\n", dcm_.plan_name.c_str());
-        //        if (this->scorer_type == mqi::DOSE || this->scorer_type == mqi::LETd ||
-        //            this->scorer_type == mqi::LETt) {
-        //            this->scorer_capacity = this->dcm_.dim_.x * this->dcm_.dim_.y * this->dcm_.dim_.z;
-        //        }
-        tx = new mqi::treatment_session<R>(dcm_.plan_name);
+        if (!this->machine_name.empty()) {
+            printf("machine force selection %s\n", this->machine_name.c_str());
+            tx = new mqi::treatment_session<R>(
+              dcm_.plan_name, this->machine_name.c_str(), this->calibration_name);
+        } else {
+            tx = new mqi::treatment_session<R>(dcm_.plan_name, "", this->calibration_name);
+        }
+        if (this->n_fractions <= 0) {
+            this->n_fractions = tx->get_fractions();
+        }
+        printf("n fraction %d rbe %f\n", this->n_fractions, this->rbe);
         if (sim_type == mqi::PER_BEAM) {
             beam_numbers = parser.get_int_vector("BeamNumbers", ",");
             printf("Number of beam selected %d\n", beam_numbers.size());
@@ -956,7 +972,7 @@ public:
         const mqi::dataset* ion_beam_sequence = (*mqi_ds)("IonControlPointSequence")[0];
         std::vector<float>  temp_sid;
         ion_beam_sequence->get_values("SnoutPosition", temp_sid);
-        this->sid = temp_sid[0];
+        this->sid = temp_sid[0] + 50;
         printf("sid %f\n", this->sid);
         mqi::coordinate_transform<R> p_coord = this->tx->get_coordinate(bnb);
         p_coord.angles[3]                    = 90.0;   //iec2dicom angle
@@ -1467,8 +1483,12 @@ public:
         std::chrono::time_point<std::chrono::high_resolution_clock> start, stop;
         std::chrono::duration<double, std::milli>                   duration;
         size_t                                                      h0 = 0;
-        size_t h1                   = this->beamsource.total_histories();
-        this->num_spots             = this->beamsource.total_beamlets();
+        size_t h1       = this->beamsource.total_histories();
+        this->num_spots = this->beamsource.total_beamlets();
+        if (this->unit_weights > 0) {
+            h1                          = this->num_spots * this->unit_weights;
+            this->particles_per_history = 1;
+        }
         size_t    max_histories     = 0;
         uint32_t* tracked_particles = new uint32_t[1];
         tracked_particles[0]        = 0;
@@ -1839,6 +1859,9 @@ public:
         std::string              beam_name  = beam_names[bnb - 1];
         for (int c_ind = 0; c_ind < this->world->n_children; c_ind++) {
             for (int s_ind = 0; s_ind < this->world->children[c_ind]->n_scorers; s_ind++) {
+                if (!this->world->children[c_ind]->scorers[s_ind]->save_output) {
+                    continue;
+                }
                 filename = beam_name + "_" + std::to_string(c_ind) + "_" +
                            this->world->children[c_ind]->scorers[s_ind]->name_;
                 dim           = this->world->children[c_ind]->geo->get_nxyz();
@@ -1847,20 +1870,23 @@ public:
                 if (!this->output_format.compare("mhd")) {
                     mqi::io::save_to_mhd<R>(this->world->children[c_ind],
                                             reshaped_data,
-                                            this->particles_per_history,
+                                            this->particles_per_history * this->rbe *
+                                              this->n_fractions,
                                             this->output_path,
                                             filename,
                                             vol_size);
                 } else if (!this->output_format.compare("mha")) {
                     mqi::io::save_to_mha<R>(this->world->children[c_ind],
                                             reshaped_data,
-                                            this->particles_per_history,
+                                            this->particles_per_history * this->rbe *
+                                              this->n_fractions,
                                             this->output_path,
                                             filename,
                                             vol_size);
                 } else {
                     mqi::io::save_to_bin<double>(reshaped_data,
-                                                 this->particles_per_history,
+                                                 this->particles_per_history * this->rbe *
+                                                   this->n_fractions,
                                                  this->output_path,
                                                  filename,
                                                  vol_size);
@@ -1889,7 +1915,7 @@ public:
                            this->world->children[c_ind]->scorers[s_ind]->name_;
                 dim = this->world->children[c_ind]->geo->get_nxyz();
                 mqi::io::save_to_npz<R>(this->world->children[c_ind]->scorers[s_ind],
-                                        this->particles_per_history,
+                                        this->particles_per_history * this->rbe * this->n_fractions,
                                         this->output_path,
                                         filename,
                                         dim,
@@ -1920,7 +1946,7 @@ public:
                 dim      = this->world->children[c_ind]->geo->get_nxyz();
                 vol_size = dim.x * dim.y * dim.z;
                 mqi::io::save_to_bin<R>(this->world->children[c_ind]->scorers[s_ind],
-                                        this->particles_per_history,
+                                        this->particles_per_history * this->rbe * this->n_fractions,
                                         this->output_path,
                                         filename);
             }
