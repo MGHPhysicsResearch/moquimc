@@ -143,7 +143,9 @@ public:
     size(int32_t* scorer_idx) {
         int count = 0;
         for (uint32_t ind = 0; ind < this->ct_size; ind++) {
-            if (scorer_idx[ind] >= 0) { count++; }
+            if (scorer_idx[ind] >= 0) {
+                count++;
+            }
         }
         return count;
     }
@@ -153,7 +155,9 @@ public:
     save_map(std::string filename, int32_t* scorer_idx) {
         std::ofstream fid0(filename);
         for (uint32_t ind = 0; ind < this->ct_size; ind++) {
-            if (scorer_idx[ind] >= 0) { fid0 << ind << " " << scorer_idx[ind] << "\n"; }
+            if (scorer_idx[ind] >= 0) {
+                fid0 << ind << " " << scorer_idx[ind] << "\n";
+            }
         }
         fid0.close();
     }
@@ -243,7 +247,9 @@ public:
                 line = trim_copy(line);
                 if (line.at(0) == '#') continue;
                 comment = line.find("#");
-                if (comment != std::string::npos) { line = line.substr(0, comment); }
+                if (comment != std::string::npos) {
+                    line = line.substr(0, comment);
+                }
                 parameters_total.push_back(line);
             }
             fid.close();
@@ -301,12 +307,16 @@ public:
         std::string temp;
         while (pos_current != std::string::npos) {
             temp = trim_copy(value.substr(pos_prev, pos_current - pos_prev));
-            if (temp.size() > 0) { values.push_back(temp); }
+            if (temp.size() > 0) {
+                values.push_back(temp);
+            }
             pos_prev    = pos_current + 1;
             pos_current = value.find(delimeter1, pos_prev);
         }
         temp = trim_copy(value.substr(pos_prev, pos_current - pos_prev));
-        if (temp.size() > 0) { values.push_back(temp); }
+        if (temp.size() > 0) {
+            values.push_back(temp);
+        }
         return values;
     }
 
@@ -384,6 +394,30 @@ public:
             throw std::runtime_error("Unrecognized scorer name");
         }
         return type;
+    }
+
+    CUDA_HOST
+    std::vector<scorer_t>
+    strings_to_scorer_types(std::vector<std::string> scorer_names) {
+        std::vector<scorer_t> types;
+        for (int i = 0; i < scorer_names.size(); i++) {
+            if (strcasecmp(scorer_names[i].c_str(), "EnergyDeposition") == 0) {
+                types.push_back(mqi::ENERGY_DEPOSITION);
+            } else if (strcasecmp(scorer_names[i].c_str(), "Dose") == 0) {
+                types.push_back(mqi::DOSE);
+            } else if (strcasecmp(scorer_names[i].c_str(), "LETd") == 0) {
+                types.push_back(mqi::LETd);
+            } else if (strcasecmp(scorer_names[i].c_str(), "LETt") == 0) {
+                types.push_back(mqi::LETt);
+            } else if (strcasecmp(scorer_names[i].c_str(), "Dij") == 0) {
+                types.push_back(mqi::DOSE_Dij);
+            } else if (strcasecmp(scorer_names[i].c_str(), "TrackLength") == 0) {
+                types.push_back(mqi::TRACK_LENGTH);
+            } else {
+                throw std::runtime_error("Unrecognized scorer name");
+            }
+        }
+        return types;
     }
 
     CUDA_HOST

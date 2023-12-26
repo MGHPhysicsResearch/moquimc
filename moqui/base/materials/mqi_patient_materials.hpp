@@ -411,24 +411,95 @@ CUDA_CONSTANT const float density_correction[3996] = {
     1.06334, 1.06315, 1.06295, 1.06275, 1.06255, 1.00275
 };
 
+template<typename R>
+CUDA_DEVICE float
+spr_default(R rho_mass, R Ek) {
+    ////< 0.9 g/cm^3 ->  g/mm^3
+    R density_tmp = rho_mass * 1000.0;
+    R fs          = 0.0;
+#ifdef __PHYSICS_DEBUG__
+    if (mqi::mqi_abs(density - 1.0) < 1e-3) {
+        return radiation_length_water;
+    }
+#endif
+    //// Fippel
+    if (density_tmp <= 0.26) {
+        if (density_tmp < 0.0012) {
+            return 0.0;
+        } else {
+            return mqi::intpl1d<R>(density_tmp, 0.0012, 0.26, 0.8815, 0.9925);
+        }
+    } else {
+        ///< Ek : proton kinetic energy
+        R rsp = 1.0123 - 3.386e-5 * Ek;
+        rsp += 0.291 * (1.0 + mqi::mqi_pow(Ek, static_cast<R>(-0.3421))) *
+               (mqi::mqi_pow(density_tmp, static_cast<R>(-0.7)) - 1.0);
+        if (density_tmp >= 0.9) {
+            return rsp;
+        } else {
+            return mqi::intpl1d<R>(density_tmp, 0.26, 0.9, 0.9925, rsp);
+        }
+    }
+    if (!mqi::mqi_isnan(fs)) {
+    } else {
+        printf("id %d density %f Ek %f\n", 0, density_tmp, Ek);
+    }
+    assert(!mqi::mqi_isnan(fs));
+
+    return fs;
+}
+template<typename R>
+CUDA_DEVICE R
+radiation_length_default(R rho_mass, R water_density, R radiation_length_water) {
+    R radiation_length_mat = 0.0;
+    R f                    = 0.0;
+    R density              = rho_mass * 1000.0;
+#ifdef __PHYSICS_DEBUG__
+    if (mqi::mqi_abs(density - 1.0) < 1e-3) {
+        return radiation_length_water;
+    }
+#endif
+    //// Fippel
+    if (density <= 0.26) {
+        f = 0.9857 + 0.0085 * density;
+    } else if (density > 0.26 && density <= 0.9) {
+        f = 1.0446 - 0.2180 * density;
+    } else if (density > 0.9) {
+        f = 1.19 + 0.44 * mqi::mqi_ln(density - 0.44);
+    }
+
+    radiation_length_mat = (water_density * radiation_length_water) / (density * 0.001 * f);
+    return radiation_length_mat;
+}
+CUDA_DEVICE fp_compute_rsp<mqi::phsp_t> compute_rsp_default = mqi::spr_default;
+CUDA_DEVICE fp_compute_rl<mqi::phsp_t> compute_radiation_length_default =
+  mqi::radiation_length_default;
 ///< Interaction model (pure virtual class)
 ///< interface between particle and material
 ///< template R and particle type
 ///<
 template<typename R>
-class patient_material_t : public h2o_t<R>
+class patient_material_t : public material_t<R>
 {
 
 public:
     CUDA_HOST_DEVICE
-    patient_material_t() : h2o_t<R>() {
-        ;
+    patient_material_t() : material_t<R>() {
+        printf("Default calibration curve is set\n");
+#if defined(__CUDACC__)
+        cudaMemcpyFromSymbol(
+          &(this->compute_rsp_), mqi::compute_rsp_default, sizeof(fp_compute_rsp<R>));
+        cudaMemcpyFromSymbol(
+          &(this->compute_rl_), mqi::compute_radiation_length_default, sizeof(fp_compute_rl<R>));
+#else
+        this->compute_rsp_ = mqi::spr_default;
+        this->compute_rl_  = mqi::radiation_length_default;
+#endif
     }
 
     CUDA_HOST_DEVICE
-    patient_material_t(int16_t hu) : h2o_t<R>() {
-        this->rho_mass = hu_to_density(hu);
-        this->X0       = radiation_length(this->rho_mass);
+    patient_material_t(int16_t hu) : material_t<R>() {
+        ;
     }
 
     CUDA_HOST_DEVICE
@@ -440,7 +511,6 @@ public:
     /// return: density (g/mm^-3)
     /// Based on Schneider conversion in TOPAS
     /// W. Schneider, et al., Phys. Med. Biol., 1996 ?? Which Schneider, not sure.
-    CUDA_HOST_DEVICE
     virtual R
     hu_to_density(int16_t hu) {
         if (hu < -1000) {

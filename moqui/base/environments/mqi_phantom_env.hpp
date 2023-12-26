@@ -436,7 +436,7 @@ public:
         std::cout << "Number of particles tracked " << tracked_particles[0] << std::endl;
         auto                                      stop = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = stop - start;
-        printf("Run done %f ms\n", duration.count());
+        printf("Run done %f s\n", duration.count()*0.0001);
     }
 
     CUDA_HOST
@@ -460,7 +460,7 @@ public:
         }
         auto                                      stop = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = stop - start;
-        printf("Reshape and save done %f ms\n", duration.count());
+        printf("Reshape and save done %f s\n", duration.count() *0.0001);
     }
 };
 

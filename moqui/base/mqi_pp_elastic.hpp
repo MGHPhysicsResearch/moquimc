@@ -76,18 +76,6 @@ class pp_elastic : public interaction<R, mqi::PROTON>
 {
 
 public:
-    CUDA_HOST_DEVICE
-    virtual R
-    cross_section(const relativistic_quantities<R>& rel, const material_t<R>& mat) {
-        R cs = 0;
-        if (rel.Ek > 10.0 && rel.Ek < 300) {
-            cs = 0.315 * mqi::mqi_pow(rel.Ek, R(-1.126));
-            cs += 3.78 * 1e-6 * rel.Ek;
-        }
-        cs *= mat.rho_mass;
-        return cs;
-    }
-
     ///< DoIt method to update track's KE, pos, dir, dE, status
     ///< compute energy loss, vertex, secondaries
     CUDA_HOST_DEVICE
@@ -96,7 +84,8 @@ public:
                track_stack_t<R>& stk,
                mqi_rng*          rng,
                const R           len,
-               material_t<R>&    mat) {
+               material_t<R>*&   mat,
+               R                 rho_mass) {
         ;
     }
 };
@@ -132,7 +121,7 @@ public:
               track_stack_t<R>& stk,
               mqi_rng*          rng,
               const R           len,
-              material_t<R>&    mat,
+              material_t<R>*&   mat,
               bool              score_local_deposit) {
 
         mqi::relativistic_quantities<R> rel(trk.vtx1.ke, this->units.Mp);
@@ -141,7 +130,8 @@ public:
         ///u = 1 100% transfer. this case th1 & th2 may yield nan...
         ///u = 0 case, we need to drop primary
         R min_value = this->Tp_cut / rel.Ek;
-        R u         = mqi::mqi_uniform<R>(rng) * (1.0 - 2.0 * min_value) + min_value;
+        //        R min_value = 0.01 / rel.Ek;
+        R u = mqi::mqi_uniform<R>(rng) * (1.0 - 2.0 * min_value) + min_value;
         assert(u < 1);
         ///< From Lorentz invariant for P-P
         ///< P1 : incident particle, P2 : target at rest
@@ -160,7 +150,6 @@ public:
         ///< 0<= cos_th3 <= 1
         R cos_th3 = E1 * E3 - this->units.Mp_sq - this->units.Mp * (E1 - E3);
         cos_th3 /= (P1 * P3);
-
         ///th34 - th3 = th4 (oposite angle against th3)
         R cos_th34 = E3 * E4 - E1 * this->units.Mp;
         cos_th34 /= (P3 * P4);
@@ -204,7 +193,6 @@ public:
                               (daughter.vtx1.pos - trk.c_node->geo->translation_vector) +
                             trk.c_node->geo->translation_vector;
         daughter.vtx1.dir = trk.c_node->geo->rotation_matrix_fwd * daughter.vtx1.dir;
-
 #if !defined(__CUDACC__)
         if (std::isnan(daughter.vtx1.dir.x) || std::isnan(daughter.vtx1.dir.y) ||
             std::isnan(daughter.vtx1.dir.z)) {
@@ -231,8 +219,8 @@ public:
     }
 
     CUDA_HOST_DEVICE
-    virtual R
-    cross_section(const relativistic_quantities<R>& rel, const material_t<R>& mat) {
+    R
+    cross_section(const relativistic_quantities<R>& rel, material_t<R>*& mat, R rho_mass) {
         R cs = 0;
 
         if (rel.Ek >= Ek_min && rel.Ek <= Ek_max) {
@@ -240,9 +228,9 @@ public:
             uint16_t idx1 = idx0 + 1;
             R        x0   = Ek_min + idx0 * dEk;
             R        x1   = x0 + 0.5;
-            cs            = mqi::intpl1d<R>(rel.Ek, x0, x1, cs_table[idx0], cs_table[idx1]);
+            cs = mqi::intpl1d<R>(rel.Ek, x0, x1, cs_table[idx0], cs_table[idx1]);
         }
-        cs *= mat.rho_mass;
+        cs *= rho_mass;
         return cs;
     }
 };

@@ -252,8 +252,8 @@ public:
 
     ///< Cross-section
     CUDA_HOST_DEVICE
-    virtual R
-    cross_section(const relativistic_quantities<R>& rel, const material_t<R>& mat) {
+    R
+    cross_section(const relativistic_quantities<R>& rel, material_t<R>*& mat, R rho_mass) {
         R cs = 0;
         if (rel.Ek >= Ei && rel.Ek <= Ef) {
             uint16_t idx0 = uint16_t((rel.Ek - Ei) / this->E_step);
@@ -262,14 +262,15 @@ public:
             R        x1   = x0 + this->E_step;
             cs            = mqi::intpl1d<R>(rel.Ek, x0, x1, cs_table[idx0], cs_table[idx1]);
         }
-        cs *= mat.rho_mass;
+        cs *= rho_mass;
+        //        cs *= (0.0001 / mat.rho_mass);
         return cs;
     }
 
     ///< dEdx
     CUDA_HOST_DEVICE
     virtual inline R
-    dEdx(const relativistic_quantities<R>& rel, const material_t<R>& mat) {
+    dEdx(const relativistic_quantities<R>& rel, material_t<R>*& mat) {
         R pw = 0;
         if (rel.Ek >= Ei && rel.Ek <= Ef) {
             uint16_t idx0 = uint16_t((rel.Ek - Ei) / this->E_step);
@@ -296,18 +297,18 @@ public:
     CUDA_HOST_DEVICE
     virtual inline R
     energy_loss(const relativistic_quantities<R>& rel,
-                material_t<R>&                    mat,
+                material_t<R>*&                   mat,
+                R                                 rho_mass,
                 const R                           step_length,
                 mqi_rng*                          rng) {
         ///< n is left index of energy & range steps table
         R length_in_water =
-          step_length * mat.stopping_power_ratio(rel.Ek) * mat.rho_mass / this->units.water_density;
+          step_length * mat->compute_rsp_(rho_mass, rel.Ek) * rho_mass / this->units.water_density;
         uint16_t n  = uint16_t((rel.Ek - this->Ei) / this->E_step);
         R        x0 = this->Ei + n * this->E_step;
         R        x1 = x0 + this->E_step;
         if (x0 > rel.Ek) n -= 1;
         if (x1 < rel.Ek) n += 1;
-
         R r = mqi::intpl1d(rel.Ek, x0, x1, r_steps[n], r_steps[n + 1]);
         if (r < length_in_water) return rel.Ek;   //< maximum energy loss
         r -= length_in_water;                     //< update residual range
@@ -318,8 +319,11 @@ public:
         x0        = this->Ei + n * this->E_step;
         x1        = x0 + this->E_step;
         R dE_mean = rel.Ek - mqi::intpl1d(r, r_steps[n], r_steps[n + 1], x0, x1);
-        R dE_var  = this->energy_straggling(rel, mat, length_in_water);
-        R ret     = mqi::mqi_normal(rng, dE_mean, mqi::mqi_sqrt(dE_var));
+        ///< if energy loss is less than 1% of kinetic energy (Geant4)
+        ///< the energy loss is then calculated from dEdx
+        ///< but moqui 1% gives step on BP for low energy, such as 70 MeV
+        R dE_var = this->energy_straggling(rel, mat, length_in_water, rho_mass);
+        R ret    = mqi::mqi_normal(rng, dE_mean, mqi::mqi_sqrt(dE_var));
         if (ret < 0) ret *= -1.0;
         return ret;
     }
@@ -328,37 +332,14 @@ public:
     CUDA_HOST_DEVICE
     inline R
     energy_straggling(const relativistic_quantities<R>& rel,
-                      const material_t<R>&              mat,
-                      const R                           step_length) {
+                      material_t<R>*&                   mat,
+                      const R                           step_length,
+                      R                                 rho_mass) {
         R Te   = (rel.Te_max >= 0.08511) ? 0.08511 : rel.Te_max;
-        R O_sq = mat.dedx_term0() * mat.rho_mass / this->units.water_density * step_length;
+        R O_sq = mat->dedx_term0() * rho_mass / this->units.water_density * step_length;
         O_sq *= Te / rel.beta_sq * (1.0 - 0.5 * rel.beta_sq);
+
         return O_sq;
-    }
-
-    ///< calculate radiation length based on density (mm)
-    ///< TODO: this better to be in material
-    /// rho_mass (g/mm^3)
-    /// From M. Fippel and M. Soukup, Med. Phys. Vol. 31, No. 8, 2004
-    CUDA_HOST_DEVICE
-    virtual R
-    radiation_length(R density) {
-        R radiation_length_mat = 0.0;
-        R f                    = 0.0;
-        density *= 1000.0;
-
-        //// Fippel
-        if (density <= 0.26) {
-            f = 0.9857 + 0.0085 * density;
-        } else if (density > 0.26 && density <= 0.9) {
-            f = 1.0446 - 0.2180 * density;
-        } else if (density > 0.9) {
-            f = 1.19 + 0.44 * mqi::mqi_ln(density - 0.44);
-        }
-
-        radiation_length_mat =
-          (this->units.water_density * this->units.radiation_length_water) / (density * 0.001 * f);
-        return radiation_length_mat;
     }
 
     ///< CSDA method is special to p_ionization
@@ -368,28 +349,35 @@ public:
                track_stack_t<R>& stk,
                mqi_rng*          rng,
                const R           len,
-               material_t<R>&    mat) {
+               material_t<R>*&   mat,
+               R                 rho_mass) {
         mqi::relativistic_quantities<R> rel(trk.vtx0.ke, this->units.Mp);
         ///< CSDA energy loss
 #ifdef DEBUG
         printf("len %f rsp %f density %f water density %f length in water %f mm\n",
                len,
                mat.stopping_power_ratio(rel.Ek),
-               mat.rho_mass,
+               rho_mass,
                this->units.water_density,
-               len * mat.stopping_power_ratio(rel.Ek) * mat.rho_mass / this->units.water_density);
+               len * mat.stopping_power_ratio(rel.Ek) * rho_mass / this->units.water_density);
 #endif
-        R dE = this->energy_loss(rel, mat, len, rng);
+        R dE = this->energy_loss(rel, mat, rho_mass, len, rng);
         ///< Update track (KE & POS & DIR)
         R r = 1.0;
         if (dE >= trk.vtx0.ke) {
             r = trk.vtx0.ke / dE;
             trk.stop();
         }
+        if (dE * r >= 0) {
+        } else {
+            printf("mat %f %f\n", rho_mass, mat->compute_rsp_(rho_mass, rel.Ek));
+            printf("dE %f r %f len %f\n", dE, r, len);
+        }
         assert(dE * r >= 0);
         ///< Multiple Coulomb SCattering (MSC)
-        R P                    = rel.momentum();
-        R radiation_length_mat = this->radiation_length(mat.rho_mass);
+        R P = rel.momentum();
+        R radiation_length_mat =
+          mat->compute_rl_(rho_mass, this->units.water_density, this->units.radiation_length_water);
 
         R th_sq = ((this->Es / P) * (this->Es / P) / rel.beta_sq) * len / radiation_length_mat;
         R th    = mqi::mqi_sqrt(th_sq);
@@ -414,7 +402,6 @@ public:
                            (trk.vtx0.dir.norm() * trk.vtx1.dir.norm()) -
                          mqi::mqi_cos(th)) < 1e-3) {
         } else {
-#ifdef DEBUG
             printf("cos(th) %f dot %f\n",
                    mqi::mqi_cos(th),
                    trk.vtx0.dir.dot(trk.vtx1.dir) / (trk.vtx0.dir.norm() * trk.vtx1.dir.norm()));
@@ -422,7 +409,6 @@ public:
             trk.vtx0.dir.dump();
             printf("vtx1 ");
             trk.vtx1.dir.dump();
-#endif
         }
         assert(mqi::mqi_abs(trk.vtx0.dir.dot(trk.vtx1.dir) /
                               (trk.vtx0.dir.norm() * trk.vtx1.dir.norm()) -
@@ -440,8 +426,9 @@ public:
               track_stack_t<R>& stk,
               mqi_rng*          rng,
               const R           len,
-              material_t<R>&    mat,
+              material_t<R>*&   mat,
               bool              score_local_deposit) {
+
         //This method in p_ion should get called after CSDA
         mqi::relativistic_quantities<R> rel(trk.vtx1.ke, this->units.Mp);
 
@@ -464,12 +451,15 @@ public:
         /// Remove in release
 #ifdef __PHYSICS_DEBUG__
         track_t<R> daughter(trk);
-        daughter.dE       = Te;
-        daughter.primary  = false;
-        daughter.process  = mqi::D_ION;
-        daughter.vtx0.ke  = 0;
-        daughter.vtx1.ke  = 0;
-        daughter.status   = CREATED;
+        daughter.dE      = Te;
+        daughter.primary = false;
+        daughter.process = mqi::D_ION;
+        //        daughter.its.dist = 0.0;
+        //        daughter.its.dist = len;
+        daughter.vtx0.ke = 0;
+        daughter.vtx1.ke = 0;
+        daughter.status  = CREATED;
+        //        daughter.vtx0.pos = trk.c_node->geo->rotation_matrix_fwd * daughter.vtx0.pos;
         daughter.vtx0.pos = trk.c_node->geo->rotation_matrix_fwd *
                               (daughter.vtx0.pos - trk.c_node->geo->translation_vector) +
                             trk.c_node->geo->translation_vector;
@@ -478,6 +468,7 @@ public:
                               (daughter.vtx1.pos - trk.c_node->geo->translation_vector) +
                             trk.c_node->geo->translation_vector;
         daughter.vtx1.dir = trk.c_node->geo->rotation_matrix_fwd * daughter.vtx1.dir;
+        daughter.init_E   = Te;
         stk.push_secondary(daughter);
 #else
         trk.deposit(Te);
@@ -489,12 +480,12 @@ public:
     ///< compute energy loss, vertex, secondaries
     CUDA_HOST_DEVICE
     virtual void
-    last_step(track_t<R>& trk, material_t<R>& mat) {
+    last_step(track_t<R>& trk, material_t<R>*& mat, R rho_mass) {
         mqi::relativistic_quantities<R> rel(trk.vtx0.ke, this->units.Mp);
         R                               length_in_water = 0;
         if (trk.dE > 0) length_in_water = -trk.dE / this->dEdx(rel, mat);
         R step_length = length_in_water * this->units.water_density /
-                        (mat.stopping_power_ratio(trk.vtx0.ke) * mat.rho_mass);
+                        (mat->compute_rsp_(rho_mass, trk.vtx0.ke) * rho_mass);
         trk.update_post_vertex_position(step_length);
     }
 };

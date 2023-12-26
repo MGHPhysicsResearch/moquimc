@@ -5,14 +5,14 @@
 #include <strings.h>
 #include <sys/stat.h>
 
-#include <moqui/base/mqi_common.hpp>
-#include <moqui/base/mqi_node.hpp>
 #include <moqui/base/materials/mqi_material.hpp>
 #include <moqui/base/mqi_beamsource.hpp>
 #include <moqui/base/mqi_cli.hpp>
+#include <moqui/base/mqi_common.hpp>
 #include <moqui/base/mqi_error_check.hpp>
 #include <moqui/base/mqi_fippel_physics.hpp>
 #include <moqui/base/mqi_io.hpp>
+#include <moqui/base/mqi_node.hpp>
 #include <moqui/base/mqi_scorer.hpp>
 #include <moqui/base/mqi_threads.hpp>
 #include <moqui/base/mqi_track.hpp>
@@ -122,7 +122,7 @@ public:
 #endif
         auto                                      stop = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = stop - start;
-        printf("Initialization for geometry done %f ms\n", duration.count());
+        printf("Initialization for geometry done %f s\n", duration.count() * 0.0001);
     }
 
     ///< A method to be called when simulation is finalized
@@ -146,11 +146,10 @@ public:
     double*
     reshape_data(int c_ind, int s_ind, mqi::vec3<ijk_t> dim) {
         double* reshaped_data = new double[dim.x * dim.y * dim.z];
-        int ind_x = 0, ind_y = 0, ind_z = 0, lin = 0;
+        int     ind_x = 0, ind_y = 0, ind_z = 0, lin = 0;
         for (int i = 0; i < dim.x * dim.y * dim.z; i++) {
             reshaped_data[i] = 0;
         }
-        printf("max capacity %d\n", this->world->children[c_ind]->scorers[s_ind]->max_capacity_);
         for (int ind = 0; ind < this->world->children[c_ind]->scorers[s_ind]->max_capacity_;
              ind++) {
             if (this->world->children[c_ind]->scorers[s_ind]->data_[ind].key1 != mqi::empty_pair &&
@@ -201,13 +200,13 @@ public:
         }
         auto                                      stop = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = stop - start;
-        printf("Reshape and save done %f ms\n", duration.count());
+        printf("Reshape and save done %f s\n", duration.count() * 0.0001);
     }
 
     CUDA_HOST
     virtual void
     save_sparse_file() {
-        auto start = std::chrono::high_resolution_clock::now();
+        auto             start = std::chrono::high_resolution_clock::now();
         mqi::vec3<ijk_t> dim;
         std::string      filename;
         printf("num spots \n");
@@ -236,7 +235,7 @@ public:
         }
         auto                                      stop = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = stop - start;
-        printf("Reshape and save to npz done %f ms\n", duration.count());
+        printf("Reshape and save to npz done %f s\n", duration.count() * 0.0001);
     }
 
     CUDA_HOST

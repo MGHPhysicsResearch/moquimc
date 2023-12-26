@@ -52,4 +52,5 @@ target_link_libraries(tps_env
         gdcmIOD
         gdcmMSFF
         gdcmjpeg16
+        z
         )

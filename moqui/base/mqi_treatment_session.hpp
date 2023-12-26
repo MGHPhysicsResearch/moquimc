@@ -46,7 +46,7 @@ protected:
     mqi::dataset* mqi_ds_ = nullptr;
 
 public:
-    mqi::patient_material_t<T> material_;
+    mqi::patient_material_t<T>* material_;
 
     /// Constructs treatment machine based on DICOM or specific file name.
     /// It reads in RT file recursively and construct a dataset tree
@@ -149,7 +149,7 @@ public:
             //expecting file
             std::cout << "Creating a generic PBS machine from : " << model << "\n";
             tx_machine_ = new mqi::pbs<T>(model);
-            material_   = mqi::pbs_material_t<T>();
+            material_   = new mqi::pbs_material_t<T>();
             return true;
         } else {
             throw std::runtime_error("Valid machine is not available.");
@@ -226,7 +226,9 @@ public:
             std::vector<std::string> bn;
             i->get_values("BeamName", bn);   //works for RTIP & RTIBTR
             if (bn.size() == 0) continue;
-            if (bnm == mqi::trim_copy(bn[0])) { return i; }
+            if (bnm == mqi::trim_copy(bn[0])) {
+                return i;
+            }
         }
         throw std::runtime_error("Invalid beam name.");
     }
@@ -242,7 +244,9 @@ public:
             std::vector<int> bn;
             i->get_values("BeamNumber", bn);   //works only for RTIP
             assert(bn.size() > 0);
-            if (bnb == bn[0]) { return i; }
+            if (bnb == bn[0]) {
+                return i;
+            }
         }
         throw std::runtime_error("Invalid beam number.");
     }

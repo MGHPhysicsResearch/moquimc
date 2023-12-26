@@ -111,9 +111,9 @@ CUDA_GLOBAL void
 add_node_scorers(mqi::node_t<R>*         node,
                  uint16_t                n_scorers           = 0,
                  mqi::key_value**        scorers_data        = nullptr,
-                 mqi::key_value**        scorers_count       = nullptr,
-                 mqi::key_value**        scorers_mean        = nullptr,
-                 mqi::key_value**        scorers_variance    = nullptr,
+//                 mqi::key_value**        scorers_count       = nullptr,
+//                 mqi::key_value**        scorers_mean        = nullptr,
+//                 mqi::key_value**        scorers_variance    = nullptr,
                  mqi::scorer_t*          scorer_types        = nullptr,
                  uint32_t*               scorer_sizes        = nullptr,
                  std::string*            scorer_names        = nullptr,
@@ -129,11 +129,11 @@ add_node_scorers(mqi::node_t<R>*         node,
 
     node->n_scorers    = n_scorers;
     node->scorers_data = scorers_data;
-    if (scorers_count) {
-        node->scorers_count    = scorers_count;
-        node->scorers_mean     = scorers_mean;
-        node->scorers_variance = scorers_variance;
-    }
+//    if (scorers_count) {
+//        node->scorers_count    = scorers_count;
+//        node->scorers_mean     = scorers_mean;
+//        node->scorers_variance = scorers_variance;
+//    }
 
     if (n_scorers >= 1) node->scorers = new mqi::scorer<R>*[n_scorers];
 
@@ -142,11 +142,11 @@ add_node_scorers(mqi::node_t<R>*         node,
         node->scorers[i] = new mqi::scorer<R>("", scorer_sizes[i], fp[i]);
         printf("compute hit %p\n", node->scorers[i]->compute_hit_);
 
-        if (scorers_count) {
-            node->scorers[i]->score_variance_ = true;
-        } else {
-            node->scorers[i]->score_variance_ = false;
-        }
+//        if (scorers_count) {
+//            node->scorers[i]->score_variance_ = true;
+//        } else {
+//            node->scorers[i]->score_variance_ = false;
+//        }
         printf("scorer data[i] %p\n", scorers_data[i]);
         node->scorers[i]->data_ = scorers_data[i];
         //        node->scorers[i]->roi_  = roi[i];
@@ -157,11 +157,11 @@ add_node_scorers(mqi::node_t<R>*         node,
                                                 roi_stride[i],
                                                 roi_acc_stride[i]);
         //        printf("scorer[i] mask %p\n", node->scorers[i]->roi_mask_);
-        if (scorers_count) {
-            node->scorers[i]->count_    = scorers_count[i];
-            node->scorers[i]->mean_     = scorers_mean[i];
-            node->scorers[i]->variance_ = scorers_variance[i];
-        }
+//        if (scorers_count) {
+//            node->scorers[i]->count_    = scorers_count[i];
+//            node->scorers[i]->mean_     = scorers_mean[i];
+//            node->scorers[i]->variance_ = scorers_variance[i];
+//        }
     }
     printf("add node scorers done\n");
 }
@@ -278,16 +278,16 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
         gpu_err_chk(cudaMalloc(&d_roi_original_length, c_node->n_scorers * sizeof(uint32_t)));
         gpu_err_chk(cudaMalloc(&d_roi_method, c_node->n_scorers * sizeof(mqi::roi_mapping_t)));
 
-        if (c_node->scorers[0]->score_variance_) {
-            printf("Score variance turn on\n");
-            h_scorers_count = new mqi::key_value*[c_node->n_scorers];
-            h_scorers_mean  = new mqi::key_value*[c_node->n_scorers];
-            h_scorers_var   = new mqi::key_value*[c_node->n_scorers];
-            gpu_err_chk(cudaMalloc(&d_scorers_count, c_node->n_scorers * sizeof(mqi::key_value*)));
-            gpu_err_chk(cudaMalloc(&d_scorers_mean, c_node->n_scorers * sizeof(mqi::key_value*)));
-            gpu_err_chk(
-              cudaMalloc(&d_scorers_variance, c_node->n_scorers * sizeof(mqi::key_value*)));
-        }
+//        if (c_node->scorers[0]->score_variance_) {
+//            printf("Score variance turn on\n");
+//            h_scorers_count = new mqi::key_value*[c_node->n_scorers];
+//            h_scorers_mean  = new mqi::key_value*[c_node->n_scorers];
+//            h_scorers_var   = new mqi::key_value*[c_node->n_scorers];
+//            gpu_err_chk(cudaMalloc(&d_scorers_count, c_node->n_scorers * sizeof(mqi::key_value*)));
+//            gpu_err_chk(cudaMalloc(&d_scorers_mean, c_node->n_scorers * sizeof(mqi::key_value*)));
+//            gpu_err_chk(
+//              cudaMalloc(&d_scorers_variance, c_node->n_scorers * sizeof(mqi::key_value*)));
+//        }
 
         for (int i = 0; i < c_node->n_scorers; i++) {
             ///< pointer initialization in GPU
@@ -327,44 +327,44 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
                 h_roi_stride[i]     = nullptr;
                 h_roi_acc_stride[i] = nullptr;
             }
-            if (c_node->scorers[i]->score_variance_) {
-                gpu_err_chk(cudaMalloc(&h_scorers_count[i],
-                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value)));
-                cudaMemset(h_scorers_count[i],
-                           0xff,
-                           sizeof(mqi::key_value) * c_node->scorers[i]->max_capacity_);
-                //                init_table_cuda<<<1, 1>>>(h_scorers_count[i], c_node->scorers[i]->max_capacity_);
-
-                gpu_err_chk(cudaMemcpy(h_scorers_count[i],
-                                       c_node->scorers[i]->count_,
-                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
-                                       cudaMemcpyHostToDevice));
-
-                gpu_err_chk(cudaMalloc(&h_scorers_mean[i],
-                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value)));
-
-                cudaMemset(h_scorers_mean[i],
-                           0xff,
-                           sizeof(mqi::key_value) * c_node->scorers[i]->max_capacity_);
-                //                init_table_cuda<<<1, 1>>>(h_scorers_mean[i], c_node->scorers[i]->max_capacity_);
-
-                gpu_err_chk(cudaMemcpy(h_scorers_mean[i],
-                                       c_node->scorers[i]->mean_,
-                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
-                                       cudaMemcpyHostToDevice));
-
-                gpu_err_chk(cudaMalloc(&h_scorers_var[i],
-                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value)));
-                cudaMemset(h_scorers_var[i],
-                           0xff,
-                           sizeof(mqi::key_value) * c_node->scorers[i]->max_capacity_);
-                //                init_table_cuda<<<1, 1>>>(h_scorers_var[i], c_node->scorers[i]->max_capacity_);
-
-                gpu_err_chk(cudaMemcpy(h_scorers_var[i],
-                                       c_node->scorers[i]->variance_,
-                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
-                                       cudaMemcpyHostToDevice));
-            }
+//            if (c_node->scorers[i]->score_variance_) {
+//                gpu_err_chk(cudaMalloc(&h_scorers_count[i],
+//                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value)));
+//                cudaMemset(h_scorers_count[i],
+//                           0xff,
+//                           sizeof(mqi::key_value) * c_node->scorers[i]->max_capacity_);
+//                //                init_table_cuda<<<1, 1>>>(h_scorers_count[i], c_node->scorers[i]->max_capacity_);
+//
+//                gpu_err_chk(cudaMemcpy(h_scorers_count[i],
+//                                       c_node->scorers[i]->count_,
+//                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
+//                                       cudaMemcpyHostToDevice));
+//
+//                gpu_err_chk(cudaMalloc(&h_scorers_mean[i],
+//                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value)));
+//
+//                cudaMemset(h_scorers_mean[i],
+//                           0xff,
+//                           sizeof(mqi::key_value) * c_node->scorers[i]->max_capacity_);
+//                //                init_table_cuda<<<1, 1>>>(h_scorers_mean[i], c_node->scorers[i]->max_capacity_);
+//
+//                gpu_err_chk(cudaMemcpy(h_scorers_mean[i],
+//                                       c_node->scorers[i]->mean_,
+//                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
+//                                       cudaMemcpyHostToDevice));
+//
+//                gpu_err_chk(cudaMalloc(&h_scorers_var[i],
+//                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value)));
+//                cudaMemset(h_scorers_var[i],
+//                           0xff,
+//                           sizeof(mqi::key_value) * c_node->scorers[i]->max_capacity_);
+//                //                init_table_cuda<<<1, 1>>>(h_scorers_var[i], c_node->scorers[i]->max_capacity_);
+//
+//                gpu_err_chk(cudaMemcpy(h_scorers_var[i],
+//                                       c_node->scorers[i]->variance_,
+//                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
+//                                       cudaMemcpyHostToDevice));
+//            }
 
             scorers_types[i]       = c_node->scorers[i]->type_;
             scorers_size[i]        = c_node->scorers[i]->max_capacity_;
@@ -389,22 +389,22 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
                                h_roi_acc_stride,
                                c_node->n_scorers * sizeof(uint32_t*),
                                cudaMemcpyHostToDevice));
-        if (h_scorers_count) {
-            gpu_err_chk(cudaMemcpy(d_scorers_count,
-                                   h_scorers_count,
-                                   c_node->n_scorers * sizeof(mqi::key_value*),
-                                   cudaMemcpyHostToDevice));
-
-            gpu_err_chk(cudaMemcpy(d_scorers_mean,
-                                   h_scorers_mean,
-                                   c_node->n_scorers * sizeof(mqi::key_value*),
-                                   cudaMemcpyHostToDevice));
-
-            gpu_err_chk(cudaMemcpy(d_scorers_variance,
-                                   h_scorers_var,
-                                   c_node->n_scorers * sizeof(mqi::key_value*),
-                                   cudaMemcpyHostToDevice));
-        }
+//        if (h_scorers_count) {
+//            gpu_err_chk(cudaMemcpy(d_scorers_count,
+//                                   h_scorers_count,
+//                                   c_node->n_scorers * sizeof(mqi::key_value*),
+//                                   cudaMemcpyHostToDevice));
+//
+//            gpu_err_chk(cudaMemcpy(d_scorers_mean,
+//                                   h_scorers_mean,
+//                                   c_node->n_scorers * sizeof(mqi::key_value*),
+//                                   cudaMemcpyHostToDevice));
+//
+//            gpu_err_chk(cudaMemcpy(d_scorers_variance,
+//                                   h_scorers_var,
+//                                   c_node->n_scorers * sizeof(mqi::key_value*),
+//                                   cudaMemcpyHostToDevice));
+//        }
         gpu_err_chk(cudaMemcpy(d_scorers_types,
                                scorers_types,
                                c_node->n_scorers * sizeof(mqi::scorer_t),
@@ -467,9 +467,9 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
         mc::add_node_scorers<R><<<1, 1>>>(g_node,
                                           c_node->n_scorers,
                                           d_scorers_data,
-                                          d_scorers_count,
-                                          d_scorers_mean,
-                                          d_scorers_variance,
+//                                          d_scorers_count,
+//                                          d_scorers_mean,
+//                                          d_scorers_variance,
                                           d_scorers_types,
                                           d_scorers_size,
                                           d_scorers_name,
@@ -492,9 +492,9 @@ upload_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
     }
 
     delete[] h_scorers_data;
-    delete[] h_scorers_count;
-    delete[] h_scorers_mean;
-    delete[] h_scorers_var;
+//    delete[] h_scorers_count;
+//    delete[] h_scorers_mean;
+//    delete[] h_scorers_var;
     delete[] h_children;
     delete[] scorers_types;
     delete[] scorers_size;

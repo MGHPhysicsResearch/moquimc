@@ -42,6 +42,13 @@ public:
     }
 
     CUDA_HOST_DEVICE
+    void
+    push_primary(const track_t<R>& trk) {
+        tracks[0] = trk;
+        idx       = 1;
+    }
+
+    CUDA_HOST_DEVICE
     bool
     is_empty(void) {
         return idx == 0;
