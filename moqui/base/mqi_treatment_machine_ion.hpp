@@ -237,7 +237,7 @@ public:
     /// \note currently we consider range-shiter and aperture. geometry will be added later.
     virtual mqi::beamline<T>
     create_beamline(const mqi::dataset* ds, mqi::modality_type m) {
-        mqi::beamline<T> beamline;
+        mqi::beamline<T> beamline_org;
 
         ///< Access to tag LUT
         auto seq_tags = &mqi::seqtags_per_modality.at(m);
@@ -245,18 +245,32 @@ public:
         ///< geometry creation of snout?
         ///< position from control point 0
         ///< beamline.append_geometry(this->characterize_snout);
-        std::vector<int> itmp;
-        std::vector<int> ftmp;
-
+        std::vector<int>                   itmp;
+        std::vector<std::pair<float, int>> ftmp;
         ///< 1. number of rangeshifter sequence
         ds->get_values("NumberOfRangeShifters", itmp);
         std::cout << "number of range shifter: " << itmp[0] << std::endl;
-        if (itmp[0] >= 1) { beamline.append_geometry(this->characterize_rangeshifter(ds, m)); }
-
+        if (itmp[0] >= 1) {
+            beamline_org.append_geometry(this->characterize_rangeshifter(ds, m));
+        }
         ///< 2. number of blocks
         ds->get_values("NumberOfBlocks", itmp);
         std::cout << "number of blocks: " << itmp[0] << std::endl;
-        if (itmp[0] >= 1) { beamline.append_geometry(this->characterize_aperture(ds, m)); }
+        if (itmp[0] >= 1) {
+            beamline_org.append_geometry(this->characterize_aperture(ds, m));
+        }
+
+        std::vector<mqi::geometry*> beamline_geometries = beamline_org.get_geometries();
+        for (int i = 0; i < beamline_geometries.size(); i++) {
+            ftmp.push_back(std::make_pair(beamline_geometries[i]->pos.z, i));
+        }
+        std::sort(ftmp.begin(), ftmp.end());
+        std::reverse(ftmp.begin(), ftmp.end());
+        mqi::beamline<T> beamline;
+        for (int i = 0; i < ftmp.size(); i++) {
+            beamline.append_geometry(beamline_geometries[ftmp[i].second]);
+        }
+
         return beamline;
     }
 
