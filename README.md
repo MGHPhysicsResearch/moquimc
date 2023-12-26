@@ -47,6 +47,7 @@ $ ./phantom_env --lxyz 100 100 350 --pxyz 0.0 0.0 -175 --nxyz 200 200 350 --spot
   1. Obtain material information using TOPAS
   2. Calculate correction factors for desired SPR curve
   3. Calculate fitting curves and implement them in moqui
+  4. You can refer to the fit_rsp.py for the curve fitting
 - You can find the TOPAS extensions and example parameter file under treatment_machines/TOPAS
 - These are updated version of the HU extension in TOPAS (https://github.com/topasmc/extensions/tree/master/HU)
 
