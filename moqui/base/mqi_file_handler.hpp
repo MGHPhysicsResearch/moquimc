@@ -300,24 +300,29 @@ public:
     CUDA_HOST
     std::vector<std::string>
     get_string_vector(std::string option, std::string delimeter1) {
-        size_t                   pos_current = 0, pos_prev = 0;
-        std::string              value = get_string(option, "");
-        std::vector<std::string> values;
-        pos_current = value.find(delimeter1);
-        std::string temp;
-        while (pos_current != std::string::npos) {
+        size_t      pos_current = 0, pos_prev = 0;
+        std::string value = get_string(option, "");
+        if (value.empty()) {
+            std::vector<std::string> empty(0);
+            return empty;
+        } else {
+            std::vector<std::string> values;
+            pos_current = value.find(delimeter1);
+            std::string temp;
+            while (pos_current != std::string::npos) {
+                temp = trim_copy(value.substr(pos_prev, pos_current - pos_prev));
+                if (temp.size() > 0) {
+                    values.push_back(temp);
+                }
+                pos_prev    = pos_current + 1;
+                pos_current = value.find(delimeter1, pos_prev);
+            }
             temp = trim_copy(value.substr(pos_prev, pos_current - pos_prev));
             if (temp.size() > 0) {
                 values.push_back(temp);
             }
-            pos_prev    = pos_current + 1;
-            pos_current = value.find(delimeter1, pos_prev);
+            return values;
         }
-        temp = trim_copy(value.substr(pos_prev, pos_current - pos_prev));
-        if (temp.size() > 0) {
-            values.push_back(temp);
-        }
-        return values;
     }
 
     CUDA_HOST
