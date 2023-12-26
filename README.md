@@ -9,8 +9,8 @@ MOnte carlo code for QUIck proton dose calculation (moqui)
   * Please refer to GDCM v2 [installation guide](http://gdcm.sourceforge.net/wiki/index.php/Compilation#Quick_start)
   * You can also install GDCM v3 using package manager
 * CUDA
-- The code has been tested with GDCM v2 and CUDA v10.2
-- The code has been tested with GDCM v3 and CUDA v10.2
+- The code has been tested with GDCM v2 and CUDA v10.2 on Ubuntu 20.04
+- The code has been tested with GDCM v3 and CUDA v11.8 on Ubuntu 22.04
 
 #### Obtaining the code
 ```bash
