@@ -104,10 +104,16 @@ public:
 
     pbs(const std::string filename) : cm2mm(10.0), mm2cm(0.0) {
         this->load_beamdata(filename);
-        if (geometry_spec_.SAD[0] == 0)
+        if (geometry_spec_.SAD[0] == 0) {
             treatment_machine_ion<T>::SAD_[0] = std::numeric_limits<T>::infinity();
-        if (geometry_spec_.SAD[1] == 0)
+        } else {
+            treatment_machine_ion<T>::SAD_[0] = geometry_spec_.SAD[0];
+        }
+        if (geometry_spec_.SAD[1] == 0) {
             treatment_machine_ion<T>::SAD_[1] = std::numeric_limits<T>::infinity();
+        } else {
+            treatment_machine_ion<T>::SAD_[1] = geometry_spec_.SAD[1];
+        }
     }
 
     ~pbs() {
