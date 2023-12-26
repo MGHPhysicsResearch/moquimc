@@ -89,14 +89,12 @@ public:
             trk.deposit(trk.vtx0.ke);
             trk.update_post_vertex_energy(trk.vtx0.ke);
             p_ion.last_step(trk, mat, rho_mass);
-            //            trk.process = mqi::KILLED0;
             trk.stop();
             return;
         }
         mqi::relativistic_quantities<R> rel(trk.vtx0.ke, units.Mp);
         R                               length = 0.0;
         ///calculate maximum possible energy-loss
-
         R max_loss_step    = max_energy_loss * -1.0 * rel.Ek / p_ion.dEdx(rel, mat);
         R current_min_step = this->max_step;
         current_min_step   = current_min_step * mat->compute_rsp_(rho_mass, rel.Ek) * rho_mass /

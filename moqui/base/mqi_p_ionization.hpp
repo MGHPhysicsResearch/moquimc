@@ -301,9 +301,11 @@ public:
                 R                                 rho_mass,
                 const R                           step_length,
                 mqi_rng*                          rng) {
+
         ///< n is left index of energy & range steps table
         R length_in_water =
           step_length * mat->compute_rsp_(rho_mass, rel.Ek) * rho_mass / this->units.water_density;
+
         uint16_t n  = uint16_t((rel.Ek - this->Ei) / this->E_step);
         R        x0 = this->Ei + n * this->E_step;
         R        x1 = x0 + this->E_step;
@@ -378,7 +380,6 @@ public:
         R P = rel.momentum();
         R radiation_length_mat =
           mat->compute_rl_(rho_mass, this->units.water_density, this->units.radiation_length_water);
-
         R th_sq = ((this->Es / P) * (this->Es / P) / rel.beta_sq) * len / radiation_length_mat;
         R th    = mqi::mqi_sqrt(th_sq);
         th      = mqi::mqi_normal<R>(rng, 0, mqi::mqi_sqrt(2.0f) * th);
