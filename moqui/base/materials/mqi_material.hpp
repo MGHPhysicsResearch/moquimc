@@ -42,12 +42,10 @@ public:
     }
 
     CUDA_HOST_DEVICE
-    inline virtual R
+    inline R
     dedx_term0() const {
         return this->units.two_pi_re2_mc2_h2o;
     }
-
-
 };
 }   // namespace mqi
 
