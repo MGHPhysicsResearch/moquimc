@@ -131,17 +131,17 @@ transport_particles_patient(mqi::thrd_t*        threads,
     total_threads = (blockDim.x * gridDim.x);
 #endif
 
-    const mqi::vec2<uint32_t> h_range = mqi::start_and_length(total_threads, n_vtx, thread_id);
-    mqi::mqi_rng*          thread_rng = &threads[thread_id].rnd_generator;
-    mqi::fippel_physics<R> fippel;
-    uint32_t               spot_ind;
-    uint32_t               c_ind;
-    mqi::vec3<mqi::ijk_t>  index_checker;
-    mqi::cnb_t             cnb;   //< child number
-    int32_t                ind;
-    uint8_t                nb_of_scorers;   //< scorer number
-    mqi::track_t<R>       primary;
-    mqi::track_stack_t<R> stack;
+    const mqi::vec2<uint32_t> h_range    = mqi::start_and_length(total_threads, n_vtx, thread_id);
+    mqi::mqi_rng*             thread_rng = &threads[thread_id].rnd_generator;
+    mqi::fippel_physics<R>    fippel;
+    uint32_t                  spot_ind;
+    uint32_t                  c_ind;
+    mqi::vec3<mqi::ijk_t>     index_checker;
+    mqi::cnb_t                cnb;   //< child number
+    int32_t                   ind;
+    uint8_t                   nb_of_scorers;   //< scorer number
+    mqi::track_t<R>           primary;
+    mqi::track_stack_t<R>     stack;
     ///< count for physics process rates
     for (uint32_t i = h_range.x; i < h_range.x + h_range.y; ++i) {
 #if defined(__CUDACC__)
@@ -280,8 +280,8 @@ transport_particles_patient_stat(mqi::thrd_t*        threads,
     mqi::cnb_t             cnb;   //< child number
     int32_t                ind;
     uint8_t                nb_of_scorers;   //< scorer number
-    mqi::track_t<R>       primary;
-    mqi::track_stack_t<R> stack;
+    mqi::track_t<R>        primary;
+    mqi::track_stack_t<R>  stack;
     ///< count for physics process rates
     for (uint32_t i = h_range.x; i < h_range.x + h_range.y; ++i) {
 #if defined(__CUDACC__)
@@ -328,9 +328,8 @@ transport_particles_patient_stat(mqi::thrd_t*        threads,
                     track.its.dist = 0.0;
                     track.its.cell = index_checker;
                 }
-
                 while (c_geo.is_valid(track.its.cell) && !track.is_stopped()) {
-                    cnb       = c_geo.ijk2cnb(track.its.cell);
+                    cnb = c_geo.ijk2cnb(track.its.cell);
                     track.its = c_geo.intersect(track.vtx0.pos, track.vtx0.dir, track.its.cell);
                     fippel.stepping(track,
                                     stack,
@@ -340,7 +339,6 @@ transport_particles_patient_stat(mqi::thrd_t*        threads,
                                     track.its.dist,
                                     score_local_deposit);
                     if (track.its.dist < 0) break;
-
                     for (uint8_t s = 0; s < nb_of_scorers - 2; ++s) {
                         if (track.c_node->scorers[s]->roi_->idx(cnb) > 0) {
                             insert_hashtable<R>(
@@ -352,7 +350,6 @@ transport_particles_patient_stat(mqi::thrd_t*        threads,
                               track.c_node->scorers[s]->max_capacity_);
                         }
                     }
-
                     for (uint8_t s = nb_of_scorers - 2; s < nb_of_scorers; ++s) {
                         ind = track.c_node->scorers[s]->roi_->get_mask_idx(cnb);
                         if (ind >= 0) {
@@ -365,7 +362,6 @@ transport_particles_patient_stat(mqi::thrd_t*        threads,
                               track.c_node->scorers[s]->max_capacity_);
                         }
                     }
-
                     if (!track.is_stopped()) {
                         c_geo.index(track.vtx1.pos,
                                     track.vtx1.dir,
@@ -379,15 +375,16 @@ transport_particles_patient_stat(mqi::thrd_t*        threads,
                   c_geo.rotation_matrix_fwd * (track.vtx0.dir);   // rotate the vertex
                 track.vtx1.pos = track.vtx0.pos;
                 track.vtx1.dir = track.vtx0.dir;
-            }   //while(history is out-of-world or zero energy
 
-        }   //while(stack is not empty)
+            }   //while(history is out-of-world or zero energy
+        }       //while(stack is not empty)
 
 #if defined(__CUDACC__)
         atomicAdd(tracked_particles, 1);
 #else
         tracked_particles[0] += 1;
 #endif
+
     }   //for
 }   //transport_particles_table
 }   // namespace mc
