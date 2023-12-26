@@ -31,6 +31,7 @@ $ make
 $ python create_phantom.py # create water phantom
 $ ./phantom_env --lxyz 100 100 350 --pxyz 0.0 0.0 -175 --nxyz 200 200 350 --spot_energy 200.0 0.0 --spot_position 0 0 0.5 --spot_size 30.0 30.0 --histories 100000 --phantom_path ./water_phantom.raw --output_prefix ./ --gpu_id 0 > ./log.out
 ```
+
 #### Update Dec/26/2023
 - There have been large updates in moqui and we added new features
   - Statistical uncertainty based stopping criteria (Please refer to the example input parameter *Statistical stopping criteria*)
@@ -38,6 +39,16 @@ $ ./phantom_env --lxyz 100 100 350 --pxyz 0.0 0.0 -175 --nxyz 200 200 350 --spot
   - Aperture handling
   - Support multiple calibration curves (You can override machine selection and define multiple calibration curves for a machine)
   - Unit weights per spot for Dij calculation (This only works for Dij scorer. The *UnitWeight* will be the absolute number of particles simulated)
+
+#### Getting calibration curves
+- moqui uses fitted functions for calibration curves
+- You need to obtain stopping power ratio to water and radiation length per density and define *compute_rsp_* and *compute_rl_* functions in patient_material_t
+- To obtain the curves:
+  1. Obtain material information using TOPAS
+  2. Calculate correction factors for desired SPR curve
+  3. Calculate fitting curves and implement them in moqui
+- You can find the TOPAS extensions and example parameter file under treatment_machines/TOPAS
+- These are updated version of the HU extension in TOPAS (https://github.com/topasmc/extensions/tree/master/HU)
 
 ### Authors
 Hoyeon Lee (leehoy12345@gmail.com)  
