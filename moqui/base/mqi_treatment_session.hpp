@@ -56,8 +56,8 @@ public:
     /// \param file_for_tx_machine : RTPLAN, IONPLAN, RTRECORD, IONRECORD
     /// Currently IONPLAN and IONRECORD are supported only.
     treatment_session(std::string file_for_tx_machine,   //for beamline and source,
-                      std::string m_name  = "",
-                      std::string mc_code = "topas:3.x") {
+                      std::string m_name      = "",
+                      std::string calibration = "default") {
 
         gdcm::Reader reader;
 
@@ -114,7 +114,7 @@ public:
             machine_name_ = m_name;
         }
 
-        if (!this->create_machine(machine_name_, mc_code)) {
+        if (!this->create_machine(machine_name_, calibration)) {
             std::runtime_error("No MC machine is registered for " + machine_name_);
         }
     }
@@ -127,15 +127,17 @@ public:
     ///  Looking for better way to determine during 'ideally' pre-processing.
     /// type_traits allows to branch the logic flow based on the type of variables.
     bool
-    create_machine(std::string machine_name, std::string mc_code) {
+    create_machine(std::string machine_name, std::string calibration) {
         if (tx_machine_) throw std::runtime_error("Preexisting machine.");
 
-        std::cout << "machine_name: " << machine_name << ", mc_code: " << mc_code << std::endl;
+        std::cout << "machine_name: " << machine_name << ", calibration: " << calibration
+                  << std::endl;
 
         const size_t deli = machine_name.find(":");
 
         std::string site = machine_name.substr(0, deli);
         std::transform(site.begin(), site.end(), site.begin(), ::tolower);
+        std::transform(calibration.begin(), calibration.end(), calibration.begin(), ::tolower);
 
         std::string model = machine_name.substr(deli + 1, machine_name.size());
 
@@ -149,6 +151,11 @@ public:
             //expecting file
             std::cout << "Creating a generic PBS machine from : " << model << "\n";
             tx_machine_ = new mqi::pbs<T>(model);
+            if (!calibration.compare("default")) {
+                tx_machine_ = new mqi::pbs<T>(model);
+            }else {
+                throw std::runtime_error("Unknown calibration method. annony");
+            }
             material_   = new mqi::pbs_material_t<T>();
             return true;
         } else {
