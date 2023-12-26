@@ -40,7 +40,7 @@ $ ./phantom_env --lxyz 100 100 350 --pxyz 0.0 0.0 -175 --nxyz 200 200 350 --spot
   - Unit weights per spot for Dij calculation (This only works for Dij scorer. The *UnitWeight* will be the absolute number of particles simulated)
 
 ### Authors
-Hoyeon Lee (leehoy12345@gmail.com)
+Hoyeon Lee (leehoy12345@gmail.com)  
 Jungwook Shin  
 Joost M. Verburg  
 Mislav Bobić  
