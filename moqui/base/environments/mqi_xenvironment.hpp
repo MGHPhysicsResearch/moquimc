@@ -96,6 +96,8 @@ public:
         this->setup_world();
         check_cuda_last_error("(setup world)");
         printf("setup world done\n");
+        this->setup_materials();
+        check_cuda_last_error("(setup materials)");
         this->setup_beamsource();
         check_cuda_last_error("(setup beamsource)");
 
@@ -104,6 +106,9 @@ public:
         mc::upload_node<R>(this->world, mc::mc_world);
         cudaDeviceSynchronize();
         check_cuda_last_error("(upload node)");
+        cudaMalloc(&mc::mc_materials, sizeof(mqi::material_t<R>));
+        printf("upload material\n");
+        mc::upload_materials<R>(this->materials, mc::mc_materials, this->n_materials);
         printf("world: %p, mc_world: %p, size(node_t): %lu\n",
                this->world,
                mc::mc_world,
