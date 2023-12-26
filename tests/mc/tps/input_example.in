@@ -22,6 +22,7 @@ SourceType FluenceMap
 SimulationType perBeam
 BeamNumbers 0
 ParticlesPerHistory 1000000 # Scale factor to select the number of primary particles
+UnitWeights 1000
 
 ScoreToCTGrid true
 
@@ -29,3 +30,23 @@ ScoreToCTGrid true
 OutputDir # output directory
 OutputFormat raw # output format (raw, mhd, mha, npz)
 OverwriteResults true
+RBE 1.1
+NumberOfFraction 30
+
+## Statistical stopping criteria
+StoppingStatistics true
+StoppingCriteria 1.0
+StatThreshold 0.5
+
+## Robust options
+XShift 0.0
+YShift 0.0
+ZShift 0.0
+DensityScaling 1.0
+
+## Rangeshifter
+RangeshifterDensity 1.19
+
+## Machine selection
+Machine PBS
+Calibration default
