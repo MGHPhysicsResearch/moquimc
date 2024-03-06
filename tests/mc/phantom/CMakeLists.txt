@@ -28,8 +28,8 @@ else ()
     set(CMAKE_CXX_COMPILER g++)
 endif ()
 
-find_package(GDCM REQUIRED)
-include(${GDCM_USE_FILE})
+# find_package(GDCM REQUIRED)
+# include(${GDCM_USE_FILE})
 
 if (APPLE)
     find_library(COREFOUNDATION_LIBRARY CoreFoundation)
@@ -37,7 +37,7 @@ endif ()
 
 include_directories(
         ${PROJECT_SOURCE_DIR}
-        ${GDCM_INCLUDE_DIRS}
+        # ${GDCM_INCLUDE_DIRS}
         ../../../
         /usr/local/cuda/include
 )
@@ -46,13 +46,14 @@ link_directories(${GDCM_DIR})
 
 target_link_libraries(phantom_env
         ${COREFOUNDATION_LIBRARY}
-        gdcmCommon
-        gdcmDSED
-        gdcmMEXD
-        gdcmjpeg12
-        gdcmjpeg8
-        gdcmDICT
-        gdcmIOD
-        gdcmMSFF
-        gdcmjpeg16
+        z
+        # gdcmCommon
+        # gdcmDSED
+        # gdcmMEXD
+        # gdcmjpeg12
+        # gdcmjpeg8
+        # gdcmDICT
+        # gdcmIOD
+        # gdcmMSFF
+        # gdcmjpeg16
         )
