@@ -418,8 +418,8 @@ spr_default(R rho_mass, R Ek) {
     R density_tmp = rho_mass * 1000.0;
     R fs          = 0.0;
 #ifdef __PHYSICS_DEBUG__
-    if (mqi::mqi_abs(density - 1.0) < 1e-3) {
-        return radiation_length_water;
+    if (mqi::mqi_abs(density_tmp - 1.0) < 1e-3) {
+        return 1.0;
     }
 #endif
     //// Fippel
