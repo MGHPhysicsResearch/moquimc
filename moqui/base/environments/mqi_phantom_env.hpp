@@ -27,7 +27,6 @@ public:
     std::array<R, 2> spot_energy;
     std::array<R, 4> spot_angles;
     size_t           n_histories = 0;   ///0.1M
-    bool             score_variance;
     ///< material_list 0 -> air, 1->water
     std::array<uint32_t, 2> threads;
     int                     random_seed  = 0;
@@ -149,12 +148,6 @@ public:
             break;
         }
 
-        if (cli["--score_variance"].size() >= 1) {
-            std::string v        = cli["--score_variance"][0];
-            this->score_variance = strcasecmp(v.c_str(), "true") == 0 || std::atoi(v.c_str()) != 0;
-        } else {
-            this->score_variance = false;
-        }
 
         if (cli["--output_prefix"].size() >= 1) {
             this->output_path = cli["--output_prefix"][0];
@@ -198,22 +191,13 @@ public:
         printf("Spot energies %f %f\n", spot_energy[0], spot_energy[1]);
         printf("Histories %lu\n", n_histories);
         printf("Number of threads %d %d\n", threads[0], threads[1]);
-        printf("Score variance %d\n", score_variance);
     }
 
     CUDA_HOST
     virtual void
     setup_materials() {
-        this->n_materials  = 2;
-        this->materials    = new mqi::material_t<R>[this->n_materials];
-        this->materials[0] = mqi::air_t<R>();
-        this->materials[1] = mqi::h2o_t<R>();
-        ///*
-        for (uint16_t i = 0; i < 2; ++i) {
-            printf(
-              "%d: %f IeV, %f g/cm^3\n", i, this->materials[i].Iev, this->materials[i].rho_mass);
-        }
-        //*/
+        this->n_materials = 1;
+        this->materials   = new mqi::patient_material_t<R>;
     }
 
     CUDA_HOST
@@ -307,18 +291,7 @@ public:
         init_table(deposit0, phantom->scorers[0]->max_capacity_);
 
         phantom->scorers[0]->data_           = deposit0;
-        phantom->scorers[0]->score_variance_ = this->score_variance;
         phantom->scorers[0]->roi_ = new mqi::roi_t(mqi::DIRECT, nxyz.x * nxyz.y * nxyz.z);
-
-        if (this->score_variance) {
-            mqi::key_value* count          = new mqi::key_value[phantom->scorers[0]->max_capacity_];
-            mqi::key_value* vox_mean       = new mqi::key_value[phantom->scorers[0]->max_capacity_];
-            mqi::key_value* vox_variance   = new mqi::key_value[phantom->scorers[0]->max_capacity_];
-            phantom->scorers[0]->count_    = count;
-            phantom->scorers[0]->mean_     = vox_mean;
-            phantom->scorers[0]->variance_ = vox_variance;
-        }
-        mc::mc_score_variance = this->score_variance;
     }
 
     CUDA_HOST
@@ -338,8 +311,13 @@ public:
         key_t*                 scorer_offset_vector = new key_t[h1 - h0];
         uint32_t*              h_count              = new uint32_t[nxyz.x];
         int                    histories_per_spot = 0, idx = 0;
+        int32_t*               transport_seed = new int32_t[h1-h0];
+
         unsigned long long int scorer_offset = nxyz.x * nxyz.y * nxyz.z;
         printf("num spots %d\n", this->num_spots);
+        for (int ind = h0; ind < h1; ind++) {
+            transport_seed[ind-h0] = this->random_seed;
+        }
         for (int spot_id = 0; spot_id < this->num_spots; spot_id++) {
             auto bl            = this->beamsource[spot_id];
             histories_per_spot = std::get<1>(bl);
@@ -391,6 +369,14 @@ public:
                       << std::endl;
             exit(-1);
         }
+
+        int32_t* d_transport_seed;
+        gpu_err_chk(cudaMalloc(&d_transport_seed, sizeof(int32_t) * (h0-h1)));
+        gpu_err_chk(cudaMemcpy(d_transport_seed,
+                               transport_seed,
+                               sizeof(int32_t) * h1,
+                               cudaMemcpyHostToDevice));
+        
         uint32_t* d_tracked_particles;
         gpu_err_chk(cudaMalloc(&d_tracked_particles, sizeof(tracked_particles)));
         gpu_err_chk(cudaMemcpy(d_tracked_particles,
@@ -402,7 +388,7 @@ public:
         free  = 0;
         total = 0;
         mc::transport_particles_patient<R><<<threads[1], threads[0]>>>(
-          worker_threads, mc::mc_world, mc::mc_vertices, h1, d_tracked_particles);
+          worker_threads, mc::mc_world, mc::mc_vertices,mc::mc_materials, h1, d_tracked_particles, d_transport_seed);
         cudaMemGetInfo(&free, &total);
         printf("After run total memory %lu MB Free memory %lu MB\n",
                total / (1024 * 1024),
@@ -429,9 +415,10 @@ public:
 #else
         mc::mc_world    = this->world;
         mc::mc_vertices = this->vertices;
+        mc::mc_materials = this->materials;
         worker_threads  = new mqi::thrd_t[1];
-        mc::transport_particles_table<R>(
-          worker_threads, mc::mc_world, mc::mc_vertices, h1, tracked_particles);
+        mc::transport_particles_patient<R>(
+          worker_threads, mc::mc_world, mc::mc_vertices,mc::mc_materials, h1, tracked_particles, transport_seed);
 #endif
         std::cout << "Number of particles tracked " << tracked_particles[0] << std::endl;
         auto                                      stop = std::chrono::high_resolution_clock::now();
