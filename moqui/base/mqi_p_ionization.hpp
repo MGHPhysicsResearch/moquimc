@@ -469,7 +469,6 @@ public:
                               (daughter.vtx1.pos - trk.c_node->geo->translation_vector) +
                             trk.c_node->geo->translation_vector;
         daughter.vtx1.dir = trk.c_node->geo->rotation_matrix_fwd * daughter.vtx1.dir;
-        daughter.init_E   = Te;
         stk.push_secondary(daughter);
 #else
         trk.deposit(Te);
