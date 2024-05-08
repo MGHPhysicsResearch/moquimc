@@ -312,11 +312,12 @@ public:
         uint32_t*              h_count              = new uint32_t[nxyz.x];
         int                    histories_per_spot = 0, idx = 0;
         int32_t*               transport_seed = new int32_t[h1-h0];
-
+        std::default_random_engine tmp_rng;
+        tmp_rng.seed(this->random_seed); 
         unsigned long long int scorer_offset = nxyz.x * nxyz.y * nxyz.z;
         printf("num spots %d\n", this->num_spots);
         for (int ind = h0; ind < h1; ind++) {
-            transport_seed[ind-h0] = this->random_seed;
+            transport_seed[ind-h0] = tmp_rng();
         }
         for (int spot_id = 0; spot_id < this->num_spots; spot_id++) {
             auto bl            = this->beamsource[spot_id];
