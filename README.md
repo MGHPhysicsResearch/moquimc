@@ -35,7 +35,7 @@ $ make
 
 #### Running the phantom example
 ```bash
-$ python ../tests/mc/phantom folder/create_phantom.py # create water phantom in /tmp/, you need to install numpy
+$ python3 ../tests/mc/phantom/create_phantom.py # create water phantom in /tmp/, you need to install numpy
 $ ./tests/mc/phantom/phantom_env --lxyz 100 100 350 --pxyz 0.0 0.0 -175 --nxyz 200 200 350 --spot_energy 200.0 0.0 --spot_position 0 0 0.5 --spot_size 30.0 30.0 --histories 100000 --phantom_path /tmp/water_phantom.raw --output_prefix ./ --gpu_id 0 > ./log.out
 ```
 
