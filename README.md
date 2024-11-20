@@ -65,15 +65,37 @@ $ ctest -V -R phantom_env
 
 
 ### Authors
-Hoyeon Lee (leehoy12345@gmail.com)  
-Jungwook Shin  
-Joost M. Verburg  
-Mislav Bobić  
-Brian Winey  
-Jan Schuemann  
-Harald Paganetti  
+Hoyeon Lee (leehoy12345@gmail.com)
+Jungwook Shin
+Joost M. Verburg
+Mislav Bobić
+Brian Winey
+Jan Schuemann
+Harald Paganetti
+
+
+### Notes
+You might need for old Tesla C2070 commands such as:
+- Install patched nvidia-390 driver on Ubuntu 22: https://launchpad.net/%7Edtl131/+archive/ubuntu/nvidiaexp
+- Install gcc5 and cuda8: https://askubuntu.com/questions/1442001/cuda-8-and-gcc-5-on-ubuntu-22-04-for-tesla-c2070
+- Error with stncpy: https://stackoverflow.com/questions/76531467/nvcc-cuda8-gcc-5-3-no-longer-compiles-with-o1-on-ubuntu-22-04
+- Error with float128: https://askubuntu.com/questions/1442001/cuda-8-and-gcc-5-on-ubuntu-22-04-for-tesla-c2070
+- `cmake ../ -DCUDAToolkit_ROOT=/opt/cuda-8.0 -DCMAKE_CUDA_COMPILER=/opt/cuda-8.0/bin/nvcc -DCMAKE_C_COMPILER=/opt/gcc5/gcc -DCMAKE_CXX_COMPILER=/opt/gcc5/g++ -DCMAKE_CUDA_ARCHITECTURES=20`
+- This might also be needed depending on the platform or CMake version: `export PATH=/opt/gcc5:$PATH`
+- Need to fine-tune QtCreator adding a new custom compiler /opt/cuda-8.0/bin/nvcc and edit .config/clangd/config.yaml file with
+```
+CompileFlags:
+Add:
+  [
+    '--cuda-path="/opt/cuda-8.0/"',
+    --cuda-gpu-arch=sm_20,
+    '-L"/opt/cuda-8.0/lib64/"',
+    -lcudart,
+  ]
+```
+- See https://github.com/clangd/clangd/issues/858 and https://github.com/clangd/clangd/issues/1815
 
 ### Acknowledgements
-This work is supported by NIH/NCI R01 234210 "Fast Individualized Delivery Adaptation in Proton Therapy"   
+This work is supported by NIH/NCI R01 234210 "Fast Individualized Delivery Adaptation in Proton Therapy"
 
 
