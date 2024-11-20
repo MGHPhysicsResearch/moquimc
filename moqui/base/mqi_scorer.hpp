@@ -5,12 +5,12 @@
 
 #include <moqui/base/mqi_common.hpp>
 #include <moqui/base/mqi_hash_table.hpp>
+#include <moqui/base/mqi_material.hpp>
 #include <moqui/base/mqi_roi.hpp>
 
 namespace mqi
 {
-typedef enum
-{
+typedef enum {
     VIRTUAL           = 0,
     ENERGY_DEPOSITION = 1,
     DOSE              = 2,   // Dose
@@ -30,7 +30,10 @@ template<typename T, typename R>
 class grid3d;
 
 template<typename R>
-using fp_compute_hit = double (*)(const track_t<R>&, const mqi::cnb_t&, grid3d<mqi::density_t, R>&);
+using fp_compute_hit = double (*)(const track_t<R>&,
+                                  const mqi::cnb_t&,
+                                  grid3d<mqi::density_t, R>&,
+                                  mqi::material_t<R>*&);
 
 ///< Scorer
 template<typename R>
@@ -55,10 +58,7 @@ public:
     roi_t* roi_;
 
     ///< Variance calculation
-    bool            score_variance_ = false;
-    mqi::key_value* count_          = nullptr;
-    mqi::key_value* mean_           = nullptr;
-    mqi::key_value* variance_       = nullptr;
+    bool save_output = true;
 
 #if defined(__CUDACC__)
 
@@ -68,9 +68,13 @@ public:
 
     ///< Construct with size
     CUDA_HOST_DEVICE
-    scorer(const char* name, const uint32_t max_capacity, const fp_compute_hit<R> func_pointer) :
-        name_(name), max_capacity_(max_capacity), current_capacity_(max_capacity),
-        compute_hit_(func_pointer) {
+    scorer(const char*             name,
+           const uint32_t          max_capacity,
+           const fp_compute_hit<R> func_pointer,
+           bool                    save_output = true) :
+        name_(name),
+        max_capacity_(max_capacity), current_capacity_(max_capacity), compute_hit_(func_pointer),
+        save_output(save_output) {
         this->delete_data_if_used();
     }
 
@@ -83,9 +87,9 @@ public:
     void
     delete_data_if_used(void) {
         if (data_ != nullptr) delete[] data_;
-        if (count_ != nullptr) delete[] count_;
-        if (mean_ != nullptr) delete[] mean_;
-        if (variance_ != nullptr) delete[] variance_;
+        //        if (count_ != nullptr) delete[] count_;
+        //        if (mean_ != nullptr) delete[] mean_;
+        //        if (variance_ != nullptr) delete[] variance_;
     }
     CUDA_DEVICE
     unsigned long long int
@@ -142,58 +146,12 @@ public:
         }
     }
 
-    ///< process hit for Dij matrix?
-    CUDA_DEVICE
-    virtual void
-    process_hit(const track_t<R>&          trk,
-                const int32_t&             cnb,
-                grid3d<mqi::density_t, R>& geo,
-                const uint32_t&            offset,
-                unsigned long long int     scorer_offset = 0) {
-        // Calculate index to store hit
-        // idx : -1 => a hit occured out of ROI. nothing to do.
-        int32_t idx = roi_->idx(cnb);
-        if (idx == -1) return;
-
-        ///< calculate quantity
-        R quantity = (*this->compute_hit_)(trk, cnb, geo);
-
-        ///< store quantity and variance if it is set.
-#if defined(__CUDACC__)
-        insert_pair(cnb, offset, quantity, scorer_offset);
-
-        if (this->score_variance_) {
-            atomicAdd(&count_[cnb].value, 1.0);
-            R delta = quantity - mean_[cnb].value;
-            atomicAdd(&mean_[cnb].value, delta / count_[cnb].value);
-            atomicAdd(&variance_[cnb].value, delta * (quantity - mean_[cnb].value));
-        }
-#else
-        mtx.lock();
-        insert_pair(cnb, offset, quantity, scorer_offset);
-        data_[idx].value += quantity;
-        if (this->score_variance_) {
-            count_[cnb].value += 1.0;
-            R delta = quantity - mean_[cnb].value;
-            mean_[cnb].value += delta / count_[cnb].value;
-            variance_[cnb].value += delta * (quantity - mean_[cnb].value);
-        }
-
-        mtx.unlock();
-#endif
-    }
-
     ///< clear data
     ///< note: reset data during simulation between runs should called differently
     CUDA_HOST
     void
     clear_data() {
         std::memset(data_, 0xff, sizeof(mqi::key_value) * this->max_capacity_);
-        if (this->score_variance_) {
-            std::memset(count_, 0xff, sizeof(mqi::key_value) * this->max_capacity_);
-            std::memset(mean_, 0xff, sizeof(mqi::key_value) * this->max_capacity_);
-            std::memset(variance_, 0xff, sizeof(mqi::key_value) * this->max_capacity_);
-        }
     }
 };
 

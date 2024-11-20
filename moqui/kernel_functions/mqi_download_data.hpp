@@ -60,20 +60,20 @@ download_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
           scrs, tmp.scorers_data, tmp.n_scorers * sizeof(mqi::key_value*), cudaMemcpyDeviceToHost));
         gpu_err_chk(cudaFree(tmp.scorers_data));
 
-        if (mc::mc_score_variance) {
-            gpu_err_chk(cudaMemcpy(scors_count,
-                                   tmp.scorers_count,
-                                   tmp.n_scorers * sizeof(mqi::key_value*),
-                                   cudaMemcpyDeviceToHost));
-            gpu_err_chk(cudaMemcpy(scors_mean,
-                                   tmp.scorers_mean,
-                                   tmp.n_scorers * sizeof(mqi::key_value*),
-                                   cudaMemcpyDeviceToHost));
-            gpu_err_chk(cudaMemcpy(scors_var,
-                                   tmp.scorers_variance,
-                                   tmp.n_scorers * sizeof(mqi::key_value*),
-                                   cudaMemcpyDeviceToHost));
-        }
+//        if (mc::mc_score_variance) {
+//            gpu_err_chk(cudaMemcpy(scors_count,
+//                                   tmp.scorers_count,
+//                                   tmp.n_scorers * sizeof(mqi::key_value*),
+//                                   cudaMemcpyDeviceToHost));
+//            gpu_err_chk(cudaMemcpy(scors_mean,
+//                                   tmp.scorers_mean,
+//                                   tmp.n_scorers * sizeof(mqi::key_value*),
+//                                   cudaMemcpyDeviceToHost));
+//            gpu_err_chk(cudaMemcpy(scors_var,
+//                                   tmp.scorers_variance,
+//                                   tmp.n_scorers * sizeof(mqi::key_value*),
+//                                   cudaMemcpyDeviceToHost));
+//        }
 
         for (int i = 0; i < tmp.n_scorers; ++i) {
             printf("scrs[%d] : %p\n", i, scrs[i]);
@@ -82,29 +82,27 @@ download_node(mqi::node_t<R>* c_node, mqi::node_t<R>*& g_node) {
                                    c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
                                    cudaMemcpyDeviceToHost));
             gpu_err_chk(cudaFree(scrs[i]));
-            if (c_node->scorers[i]->score_variance_) {
-                gpu_err_chk(cudaMemcpy(c_node->scorers[i]->count_,
-                                       scors_count[i],
-                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
-                                       cudaMemcpyDeviceToHost));
-                gpu_err_chk(cudaMemcpy(c_node->scorers[i]->mean_,
-                                       scors_mean[i],
-                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
-                                       cudaMemcpyDeviceToHost));
-
-                gpu_err_chk(cudaMemcpy(c_node->scorers[i]->variance_,
-                                       scors_var[i],
-                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
-                                       cudaMemcpyDeviceToHost));
-            }
+//            if (c_node->scorers[i]->score_variance_) {
+//                gpu_err_chk(cudaMemcpy(c_node->scorers[i]->count_,
+//                                       scors_count[i],
+//                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
+//                                       cudaMemcpyDeviceToHost));
+//                gpu_err_chk(cudaMemcpy(c_node->scorers[i]->mean_,
+//                                       scors_mean[i],
+//                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
+//                                       cudaMemcpyDeviceToHost));
+//
+//                gpu_err_chk(cudaMemcpy(c_node->scorers[i]->variance_,
+//                                       scors_var[i],
+//                                       c_node->scorers[i]->max_capacity_ * sizeof(mqi::key_value),
+//                                       cudaMemcpyDeviceToHost));
+//            }
         }
         delete[] scrs;
-        delete[] scors_count;
-        delete[] scors_mean;
-        delete[] scors_var;
+//        delete[] scors_count;
+//        delete[] scors_mean;
+//        delete[] scors_var;
     }
-    //    gpu_err_chk(cudaFree(g_node.geo));
-
     if (tmp.n_children > 0) {
         mqi::node_t<R>** children = new mqi::node_t<R>*[tmp.n_children];
         gpu_err_chk(cudaMemcpy(children,

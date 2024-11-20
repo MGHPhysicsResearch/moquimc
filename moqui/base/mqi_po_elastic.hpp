@@ -77,20 +77,6 @@ class po_elastic : public interaction<R, mqi::PROTON>
 {
 public:
 public:
-    CUDA_HOST_DEVICE
-    virtual R
-    cross_section(const relativistic_quantities<R>& rel, const material_t<R>& mat) {
-        R cs = 0;
-
-        if (rel.Ek > 50.0 && rel.Ek < 250) {
-            cs = 1.88 / rel.Ek;
-            cs += 4.0e-5 * rel.Ek;
-            cs -= 0.01475;
-        }
-        //TODO: cs for re.Ek <= 50 ?
-        cs *= mat.rho_mass;
-        return cs;
-    }
 
     ///< DoIt method to update track's KE, pos, dir, dE, status
     ///< compute energy loss, vertex, secondaries
@@ -100,7 +86,8 @@ public:
                track_stack_t<R>& stk,
                mqi_rng*          rng,
                const R           len,
-               material_t<R>&    mat) {
+               material_t<R>*&   mat,
+               R                 rho_mass) {
         ;
     }
 
@@ -112,10 +99,9 @@ public:
               track_stack_t<R>& stk,
               mqi_rng*          rng,
               const R           len,
-              material_t<R>&    mat,
+              material_t<R>*&   mat,
               bool              score_local_deposit) {
         mqi::relativistic_quantities<R> rel(trk.vtx1.ke, this->units.Mp);
-
         if (rel.Ek <= 5.5) {
             R dE = rel.Ek;
 
@@ -136,13 +122,15 @@ public:
                                   (daughter.vtx1.pos - trk.c_node->geo->translation_vector) +
                                 trk.c_node->geo->translation_vector;
             daughter.vtx1.dir = trk.c_node->geo->rotation_matrix_fwd * daughter.vtx1.dir;
-            daughter.status   = CREATED;
+            //            daughter.init_E   = dE;
+            daughter.status = CREATED;
             stk.push_secondary(daughter);
 #else
             trk.local_deposit(dE);
 #endif
             trk.update_post_vertex_energy(dE);
             trk.stop();
+            //            trk.update_post_vertex_direction(th3, phi);
 
         } else {
             R Tp_avg = 0.65 * mqi::mqi_exp(-0.0013 * rel.Ek);
@@ -153,8 +141,11 @@ public:
 
             ///< energy transfered to oxygen and will be locally absorbed.
             R dE = mqi::mqi_exponential<R>(rng, 1.0 / Tp_avg, Tp_max);
+            if (dE >= 0 && dE <= Tp_max) {
+            } else {
+                printf("dE %f Tp_avg %f Tp_max %f rel.Ek %f\n", dE, Tp_avg, Tp_max, rel.Ek);
+            }
             assert(dE >= 0 && dE <= Tp_max);
-
             R E1      = rel.Ek * (rel.Ek + 2.0 * this->units.Mp);
             R E3      = (rel.Ek - dE) * (rel.Ek - dE + 2.0 * this->units.Mp);
             R cos_th3 = (E1 + E3 - dE * (dE + 2.0 * this->units.Mo)) / 2.0 / mqi::mqi_sqrt(E1 * E3);
@@ -186,12 +177,14 @@ public:
                                   (daughter.vtx1.pos - trk.c_node->geo->translation_vector) +
                                 trk.c_node->geo->translation_vector;
             daughter.vtx1.dir = trk.c_node->geo->rotation_matrix_fwd * daughter.vtx1.dir;
+            //            daughter.init_E   = dE;
             stk.push_secondary(daughter);
 #else
             trk.local_deposit(dE);
 #endif
             trk.update_post_vertex_energy(dE);
             trk.update_post_vertex_direction(th3, phi);
+
 #if !defined(__CUDACC__)
             if (std::isnan(th3) || std::isnan(phi))
                 printf("po_e E1 %f E3 %f rel.Ek %f cos_th3 %f th3 %f phi %f\n",
@@ -249,16 +242,16 @@ public:
 
     CUDA_HOST_DEVICE
     virtual R
-    cross_section(const relativistic_quantities<R>& rel, const material_t<R>& mat) {
+    cross_section(const relativistic_quantities<R>& rel, material_t<R>*& mat, R rho_mass) {
         R cs = 0;
         if (rel.Ek >= Ek_min && rel.Ek <= Ek_max) {
             uint16_t idx0 = uint16_t((rel.Ek - Ek_min) / dEk);   //0 - 598
             uint16_t idx1 = idx0 + 1;
             R        x0   = Ek_min + idx0 * dEk;
             R        x1   = x0 + 0.5;
-            cs            = mqi::intpl1d<R>(rel.Ek, x0, x1, cs_table[idx0], cs_table[idx1]);
+            cs = mqi::intpl1d<R>(rel.Ek, x0, x1, cs_table[idx0], cs_table[idx1]);
         }
-        cs *= mat.rho_mass;
+        cs *= rho_mass;
         return cs;
     }
 };

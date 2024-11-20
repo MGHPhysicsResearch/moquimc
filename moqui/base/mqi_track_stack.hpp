@@ -34,13 +34,18 @@ public:
     CUDA_HOST_DEVICE
     void
     push_secondary(const track_t<R>& trk) {
-
         if (idx < limit) {
             tracks[idx] = trk;
             ++idx;
         }
     }
 
+    CUDA_HOST_DEVICE
+    void
+    push_primary(const track_t<R>& trk) {
+        tracks[0] = trk;
+        idx       = 1;
+    }
     CUDA_HOST_DEVICE
     bool
     is_empty(void) {

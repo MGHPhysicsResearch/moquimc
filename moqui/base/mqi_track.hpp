@@ -8,8 +8,7 @@ namespace mqi
 {
 
 ///< Particle type
-typedef enum
-{
+typedef enum {
     PHOTON   = 0,
     ELECTRON = 1,
     PROTON   = 2,
@@ -19,8 +18,7 @@ typedef enum
 //PDG[PROTON] = 2212 //
 
 ///< Process type
-typedef enum
-{
+typedef enum {
     BEGIN    = 0,
     MAX_STEP = 1,
     BOUNDARY = 2,
@@ -38,8 +36,7 @@ typedef enum
 ///< ALIVE   : under tracking
 ///< STOPPED : no further tracking is required due to limitation, e.g., cut
 ///< KILLED  : no further tracking is required due to energy 0 or exit world boundary?
-typedef enum
-{
+typedef enum {
     CREATED = 0,   ///< created
     STOPPED = 3    ///< stopped by physics process
 } status_t;
@@ -122,6 +119,18 @@ public:
         ;
     }
 
+    CUDA_HOST_DEVICE
+    void
+    set(const vertex_t<R>& v) {
+        this->status        = CREATED;
+        this->process       = BEGIN;
+        this->primary       = true;
+        this->dE            = 0;
+        this->scorer_column = 0;
+        this->local_dE      = 0;
+        vtx0                = v;
+        vtx1                = v;
+    }
     ///< Deposit energy
     CUDA_HOST_DEVICE
     void

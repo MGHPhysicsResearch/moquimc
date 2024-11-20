@@ -4,8 +4,7 @@
 
 namespace mqi
 {
-typedef enum
-{
+typedef enum {
     DIRECT   = 0,   /// scoring index is same in transport index
     INDIRECT = 1,   /// scoring index is stored start[transport_index]
     CONTOUR  = 2    /// scoring index is searched from contour map
@@ -87,14 +86,44 @@ public:
     CUDA_HOST_DEVICE
     int32_t
     get_contour_idx(const uint32_t& v) const {
-        int32_t  c        = this->lower_bound_cpp(v) - 1;
+        int32_t c = this->lower_bound_cpp(v) - 1;
+        if (c < 0) {
+            return -1;
+        }
         uint32_t distance = v - start_[c];
         if (distance < stride_[c]) {
             /// is in stride
-            if (c >= 1) distance += acc_stride_[c - 1];
+            if (c > 0) distance += acc_stride_[c - 1];
             return distance;
         }
         return -1;   //invalid
+    }
+
+    CUDA_HOST_DEVICE
+    int32_t
+    get_org_idx(const uint32_t& v) const {
+        switch (method_) {
+        case INDIRECT:
+            return start_[v];
+        case CONTOUR:
+            return get_contour_org(v);
+        default:
+            return v;
+        }
+    }
+
+    CUDA_HOST_DEVICE
+    int32_t
+    get_contour_org(const uint32_t& d) const {
+        int32_t  c = this->lower_bound_org(d);
+        uint32_t distance;
+        if (c > 0) {
+            distance = d - acc_stride_[c - 1];
+        } else {
+            distance = d;
+        }
+        uint32_t v = start_[c] + distance;
+        return v;
     }
 
     CUDA_HOST_DEVICE
@@ -131,6 +160,30 @@ public:
             it += step;
 
             if (start_[it] <= value) {
+                first = ++it;
+                count -= step + 1;
+            } else
+                count = step;
+        }
+        return first;
+    }
+
+    ///< Binary search
+    CUDA_HOST_DEVICE
+    int32_t
+    lower_bound_org(const int32_t& value) const {
+        int32_t first = 0;
+        int32_t count = length_;
+        int32_t step;
+
+        int32_t it;
+        while (count > 0) {
+
+            it   = first;
+            step = count / 2;
+            it += step;
+
+            if (acc_stride_[it] <= value) {
                 first = ++it;
                 count -= step + 1;
             } else

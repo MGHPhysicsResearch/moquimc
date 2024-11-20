@@ -1,0 +1,154 @@
+includeFile = material.txt
+
+s:Sc/CTScoringBox0/Quantity = "SPR"
+s:Sc/CTScoringBox0/Component = "Patient"
+s:Sc/CTScoringBox0/OutputFile = "NotUsedFile"
+s:Sc/CTScoringBox0/OutputFileName = "SPR_cor"
+d:Sc/CTScoringBox0/Emin = 0.01 MeV
+d:Sc/CTScoringBox0/Emax = 351 MeV
+d:Sc/CTScoringBox0/deltaE = 0.5 MeV
+s:Sc/CTScoringBox0/OutputType = "csv"
+b:Sc/CTScoringBox0/OutputToConsole = "FALSE"
+s:Sc/CTScoringBox0/IfOutputFileAlreadyExists = "Overwrite"
+
+# s:Sc/CTScoringBox0/Quantity = "MatInfo"
+# s:Sc/CTScoringBox0/Component = "Patient"
+# s:Sc/CTScoringBox0/OutputFile = "NotUsedFile"
+# s:Sc/CTScoringBox0/OutputFileName = "MaterialInfo_cor"
+# s:Sc/CTScoringBox0/OutputType = "csv"
+# b:Sc/CTScoringBox0/OutputToConsole = "FALSE"
+# s:Sc/CTScoringBox0/IfOutputFileAlreadyExists = "Overwrite"
+
+# All parameters for patient 
+s:Ge/Patient/Parent = "PatientGroup"
+s:Ge/Patient/Type = "TsXiOPatient"
+s:Ge/Patient/Material = "G4_WATER"
+d:Ge/Patient/GantryAngle = 0 deg
+d:Ge/Patient/CouchAngle = 0 deg
+d:Ge/Patient/RotX =  0. deg
+d:Ge/Patient/RotY = 90. deg
+d:Ge/Patient/RotZ =  0. deg
+d:Ge/Patient/TransX = 0. mm
+d:Ge/Patient/TransY = 0. mm
+d:Ge/Patient/TransZ = 0. mm
+i:Ge/Patient/NumberOfVoxelsX = 121
+i:Ge/Patient/NumberOfVoxelsY = 5
+iv:Ge/Patient/NumberOfVoxelsZ = 1 5
+d:Ge/Patient/VoxelSizeX = 2.0 mm
+d:Ge/Patient/VoxelSizeY = 2.0 mm
+dv:Ge/Patient/VoxelSizeZ = 1 2.5 mm
+s:Ge/Patient/InputDirectory = "./"
+s:Ge/Patient/InputFile = "EachHUonce.dat"
+
+# PatientGroup (a group of components)
+s:Ge/PatientGroup/Type="Group"
+s:Ge/PatientGroup/Parent="World"
+d:Ge/PatientGroup/TransX= 0. mm
+d:Ge/PatientGroup/TransY= 0. mm
+d:Ge/PatientGroup/TransZ= 0. mm
+d:Ge/PatientGroup/RotX= Ge/Patient/GantryAngle rad
+d:Ge/PatientGroup/RotY= 0. deg
+d:Ge/PatientGroup/RotZ= Ge/Patient/CouchAngle rad
+
+s:So/Disk/Type = "Beam"
+s:So/Disk/Component =  "BeamPosition"
+s:So/Disk/BeamParticle = "proton"
+d:So/Disk/BeamEnergy =  100 MeV
+s:So/Disk/BeamPositionCutoffShape = "Ellipse"
+d:So/Disk/BeamPositionCutoffX = 1.5 mm
+d:So/Disk/BeamPositionCutoffY = 1.5 mm
+s:So/Disk/BeamPositionDistribution = "None"
+u:So/Disk/BeamEnergySpread = 0
+
+#s:So/Disk/BeamAngularDistribution = "Point"
+s:So/Disk/BeamAngularDistribution  = "None"
+d:So/Disk/BeamAngularCutoffX       = 90. deg
+d:So/Disk/BeamAngularCutoffY       = 90. deg
+d:So/Disk/BeamAngularSpreadX       = 0.0 rad
+d:So/Disk/BeamAngularSpreadY       = 0.0 rad
+
+i:So/Disk/NumberOfHistoriesInRun=10
+
+#i:So/Default/NumberOfHistoriesInRun= 30
+Ge/BeamPosition/TransZ = 0 cm
+
+iv:Gr/Color/PatientTissue1 = 3  63  63  63
+iv:Gr/Color/PatientTissue2 = 3 100   0   0
+iv:Gr/Color/PatientTissue3 = 3 100  30   0
+iv:Gr/Color/PatientTissue4 = 3 100  60   0
+iv:Gr/Color/PatientTissue5 = 3 100  90   0
+iv:Gr/Color/PatientTissue6 = 3 100 120   0
+iv:Gr/Color/PatientTissue7 = 3 100 150   0
+iv:Gr/Color/PatientTissue8 = 3 100 180   0
+iv:Gr/Color/PatientTissue9 = 3 100 210   0
+iv:Gr/Color/PatientTissue10= 3 100 240   0
+iv:Gr/Color/PatientTissue11= 3 200 200   0
+iv:Gr/Color/PatientTissue12= 3 200 200  30
+iv:Gr/Color/PatientTissue13= 3 200 200  60
+iv:Gr/Color/PatientTissue14= 3 200 200  90
+iv:Gr/Color/PatientTissue15= 3 200 200 120
+iv:Gr/Color/PatientTissue16= 3 200 200 150
+iv:Gr/Color/PatientTissue17= 3 200 200 180
+iv:Gr/Color/PatientTissue18= 3 200 200 210
+iv:Gr/Color/PatientTissue19= 3 200 200 240
+iv:Gr/Color/PatientTissue20= 3 230 200 240
+iv:Gr/Color/PatientTissue21= 3 230 230 240
+iv:Gr/Color/PatientTissue22= 3 230 230 240
+iv:Gr/Color/PatientTissue23= 3 240 240 240
+iv:Gr/Color/PatientTissue24= 3 255 255 255
+iv:Gr/Color/PatientTissue25= 3 100 100 100
+
+
+s:Ge/MyBox1/Type="TsBox"
+s:Ge/MyBox1/Material="Lead"
+s:Ge/MyBox1/Parent="World"
+d:Ge/MyBox1/HLX=0.1 m
+d:Ge/MyBox1/HLY=0.1 m
+d:Ge/MyBox1/HLZ=0.1 m
+d:Ge/MyBox1/TransX=2. m
+d:Ge/MyBox1/TransY=0. m
+d:Ge/MyBox1/TransZ=0. m
+d:Ge/MyBox1/RotX=0. deg
+d:Ge/MyBox1/RotY=0. deg
+d:Ge/MyBox1/RotZ=0. deg
+
+
+s:Ge/MyBox2/Type="TsBox"
+s:Ge/MyBox2/Material="G4_WATER"
+s:Ge/MyBox2/Parent="World"
+d:Ge/MyBox2/HLX=0.1 m
+d:Ge/MyBox2/HLY=0.1 m
+d:Ge/MyBox2/HLZ=0.1 m
+d:Ge/MyBox2/TransX=2. m
+d:Ge/MyBox2/TransY=2. m
+d:Ge/MyBox2/TransZ=0. m
+d:Ge/MyBox2/RotX=0. deg
+d:Ge/MyBox2/RotY=0. deg
+d:Ge/MyBox2/RotZ=0. deg
+
+s:Ge/MyBox3/Type="TsBox"
+s:Ge/MyBox3/Material="Lucite"
+s:Ge/MyBox3/Parent="World"
+d:Ge/MyBox3/HLX=0.1 m
+d:Ge/MyBox3/HLY=0.1 m
+d:Ge/MyBox3/HLZ=0.1 m
+d:Ge/MyBox3/TransX=2. m
+d:Ge/MyBox3/TransY=1. m
+d:Ge/MyBox3/TransZ=0. m
+d:Ge/MyBox3/RotX=0. deg
+d:Ge/MyBox3/RotY=0. deg
+d:Ge/MyBox3/RotZ=0. deg
+
+s:Ge/MyBox4/Type="TsBox"
+s:Ge/MyBox4/Material="Water_75eV"
+s:Ge/MyBox4/Parent="World"
+d:Ge/MyBox4/HLX=0.1 m
+d:Ge/MyBox4/HLY=0.1 m
+d:Ge/MyBox4/HLZ=0.1 m
+d:Ge/MyBox4/TransX=2. m
+d:Ge/MyBox4/TransY=2. m
+d:Ge/MyBox4/TransZ=1. m
+d:Ge/MyBox4/RotX=0. deg
+d:Ge/MyBox4/RotY=0. deg
+d:Ge/MyBox4/RotZ=0. deg
+

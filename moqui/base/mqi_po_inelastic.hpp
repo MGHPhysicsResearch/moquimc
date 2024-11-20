@@ -91,26 +91,13 @@ public:
     }
 
     CUDA_HOST_DEVICE
-    virtual R
-    cross_section(const relativistic_quantities<R>& rel, const material_t<R>& mat) {
-        R cs = 0;
-        if (rel.Ek > 7 && rel.Ek < 250) {
-            cs = 1.64 * (rel.Ek - 7.9);
-            cs *= mqi::mqi_exp<R>(-0.064 * rel.Ek + 7.85 / rel.Ek);
-            cs += 9.86;
-            cs *= 0.001;
-        }
-        cs *= mat.rho_mass;
-        return cs;
-    }
-
-    CUDA_HOST_DEVICE
     virtual void
     along_step(track_t<R>&       trk,
                track_stack_t<R>& stk,
                mqi_rng*          rng,
                const R           len,
-               material_t<R>&    mat) {
+               material_t<R>*&   mat,
+               R                 rho_mass) {
         ;
     }
 };
@@ -152,8 +139,8 @@ public:
     }
 
     CUDA_HOST_DEVICE
-    virtual R
-    cross_section(const relativistic_quantities<R>& rel, const material_t<R>& mat) {
+    R
+    cross_section(const relativistic_quantities<R>& rel, material_t<R>*& mat, R rho_mass) {
         R cs = 0;
 
         if (rel.Ek >= Ek_min && rel.Ek <= Ek_max) {
@@ -163,7 +150,7 @@ public:
             R        x1   = x0 + 0.5;
             cs            = mqi::intpl1d<R>(rel.Ek, x0, x1, cs_table[idx0], cs_table[idx1]);
         }
-        cs *= mat.rho_mass;
+        cs *= rho_mass;
         return cs;
     }
 
@@ -174,19 +161,18 @@ public:
               track_stack_t<R>& stk,
               mqi_rng*          rng,
               const R           len,
-              material_t<R>&    mat,
+              material_t<R>*&   mat,
               bool              score_local_deposit) {
-        const R Ek     = trk.vtx1.ke;
-        R       Eb     = this->E_bind;   //Binding energy
-        R       Er     = Ek;             // Incident energy to calculate scattering angle
-        R       E_2nd  = 0;              // Total energy to secondary proton
-        R       E_long = 0;   // Energy loss to long range particle, e.g., leaving enerrgy
+        mqi::relativistic_quantities<R> rel(trk.vtx1.ke, this->units.Mp);
+        const R                         Ek = trk.vtx1.ke;
+        R                               Eb = this->E_bind;   //Binding energy
+        R                               Er = Ek;   // Incident energy to calculate scattering angle
+        R                               E_2nd = 0;   // Total energy to secondary proton
+        R     E_long  = 0;   // Energy loss to long range particle, e.g., leaving enerrgy
         R     E_short = 0;   // Energy loss to short range particle & binding, e.g. locally absorbed
         float dE_total = 0;
         ///< dissipate all energy by looping
-
         int secondary_protons = 0;
-
         /// empirical parameters for water I=75 eV
         if (Ek <= 215 && Ek > 200) {
             Prob_2nd = 0.78;
@@ -212,12 +198,12 @@ public:
         while ((Er - Eb) > this->E_mini) {
             Er -= Eb;
             ///< sample seconary energy
-            R u  = mqi::mqi_uniform<R>(rng);
+            R u = mqi::mqi_uniform<R>(rng);
             R dE = mqi::mqi_pow<R>(u, power) * (Er - this->E_mini) + this->E_mini;
             assert(dE >= 0);
             if (dE >= Er) dE = Er;   //In case deposit energy is greater than E_remain
-            Er -= dE;                //substract deposit energy
 
+            Er -= dE;   //substract deposit energy
             ///< energy decrease secondary + binding
             assert(dE + Eb >= 0);
             trk.update_post_vertex_energy(dE + Eb);
@@ -256,6 +242,7 @@ public:
                 daughter.vtx1.dir = trk.c_node->geo->rotation_matrix_fwd * daughter.vtx1.dir;
                 stk.push_secondary(daughter);
                 E_2nd += dE;
+                //                printf("PO_I proton dE %.4f theta %.4f phi %.4f\n", dE, th, phi);
 
             } else if (zeta < Prob_long) {
                 ///< we loose energy (dE) as neutron, photon, etc
@@ -265,6 +252,7 @@ public:
                 ///< 7 % of 50 % are short range particles
                 ///< locally deposited
 #ifdef __PHYSICS_DEBUG__
+                /// Remove in release
                 track_t<R> daughter(trk);
                 daughter.dE       = dE;
                 daughter.primary  = false;
@@ -280,17 +268,15 @@ public:
                                       (daughter.vtx1.pos - trk.c_node->geo->translation_vector) +
                                     trk.c_node->geo->translation_vector;
                 daughter.vtx1.dir = trk.c_node->geo->rotation_matrix_fwd * daughter.vtx1.dir;
+                //                daughter.init_E   = dE;
                 stk.push_secondary(daughter);
 #else
-                if (mat.rho_mass > 1.5e-4f) { trk.local_deposit(dE); }
 #endif
                 E_short += dE;   //E_short += Eb ;
             }
-            /// Deposit binding energy?
+
             Eb *= E_ratio;   //binding energy changes, 0.7 is tuned value
         }                    //while
-
-        ///< deposit remained energy if any
 
         ///< locally deposited
         /// Remove in release

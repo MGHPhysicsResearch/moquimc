@@ -11,49 +11,76 @@ namespace mqi
 ///< Basic function to scorer all energy deposit
 template<typename R>
 CUDA_DEVICE double
-energy_deposit(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>& geo) {
-    //    printf("energy deposit %f %f\n",trk.dE,trk.dE*trk.dE);
+energy_deposit(const track_t<R>&          trk,
+               const cnb_t&               cnb,
+               grid3d<mqi::density_t, R>& geo,
+               material_t<R>*&            mat) {
     return trk.dE + trk.local_dE;
 }
 
 ///< Function to scorer energy deposit by primary only
 template<typename R>
 CUDA_DEVICE double
-energy_deposit_primary(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>& geo) {
+energy_deposit_primary(const track_t<R>&          trk,
+                       const cnb_t&               cnb,
+                       grid3d<mqi::density_t, R>& geo,
+                       material_t<R>*&            mat) {
     return trk.primary == true ? trk.dE : 0.0;
 }
 
 ///< Function to scorer energy deposit by secondary
 template<typename R>
 CUDA_DEVICE double
-energy_deposit_secondary(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>& geo) {
+energy_deposit_secondary(const track_t<R>&          trk,
+                         const cnb_t&               cnb,
+                         grid3d<mqi::density_t, R>& geo,
+                         material_t<R>*&            mat) {
     return trk.primary == false ? trk.dE : 0.0;
 }
 
 template<typename R>
 CUDA_DEVICE double
-dose_to_water(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>& geo) {
+dose_to_water(const track_t<R>&          trk,
+              const cnb_t&               cnb,
+              grid3d<mqi::density_t, R>& geo,
+              material_t<R>*&            mat) {
     R density;
 #if defined(__CUDACC__)
-    //    density = __half2float(geo.get_data()[cnb]);
     density = geo.get_data()[cnb];
 #else
     density = geo.get_data()[cnb];
 #endif
-    R             volume = geo.get_volume(cnb);
-    mqi::h2o_t<R> water;
+    R volume = geo.get_volume(cnb);
     if (density < 1.0e-7) {
         return 0.0;
     } else {
-        water.rho_mass = density;
         return (trk.dE + trk.local_dE) * 1.60218e-10 /
-               (volume * density * water.stopping_power_ratio(trk.vtx0.ke));
+               (volume * density * mat->compute_rsp_(density, trk.vtx0.ke));
     }
 }
 
 template<typename R>
 CUDA_DEVICE double
-dose_to_medium(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>& geo) {
+dose_to_water_square(const track_t<R>&          trk,
+                     const cnb_t&               cnb,
+                     grid3d<mqi::density_t, R>& geo,
+                     material_t<R>*&            mat) {
+    R density = geo.get_data()[cnb];
+    R volume  = geo.get_volume(cnb);
+    if (density < 1.0e-7) {
+        return 0.0;
+    } else {
+        double dose = (trk.dE + trk.local_dE) * 1.60218e-10 /
+                      (volume * density * mat->compute_rsp_(density, trk.vtx0.ke));
+        return dose * dose;
+    }
+}
+template<typename R>
+CUDA_DEVICE double
+dose_to_medium(const track_t<R>&          trk,
+               const cnb_t&               cnb,
+               grid3d<mqi::density_t, R>& geo,
+               material_t<R>*&            mat) {
     R density;
     density  = geo.get_data()[cnb];
     R volume = geo.get_volume(cnb);
@@ -63,7 +90,10 @@ dose_to_medium(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R
 
 template<typename R>
 CUDA_DEVICE double
-LETd_weight1(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>& geo) {
+LETd_weight1(const track_t<R>&          trk,
+             const cnb_t&               cnb,
+             grid3d<mqi::density_t, R>& geo,
+             material_t<R>*&            mat) {
     R density;
     density = geo.get_data()[cnb];
     density *= 1000.0;
@@ -71,7 +101,9 @@ LETd_weight1(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>&
     length += (trk.vtx1.pos.y - trk.vtx0.pos.y) * (trk.vtx1.pos.y - trk.vtx0.pos.y);
     length += (trk.vtx1.pos.z - trk.vtx0.pos.z) * (trk.vtx1.pos.z - trk.vtx0.pos.z);
     length = mqi::mqi_sqrt(length);
-    if (length <= 0) { return 0.0; }
+    if (length <= 0) {
+        return 0.0;
+    }
     double let = trk.dE / length / density;
     if (let >= 25.0) {
         return 0;
@@ -82,7 +114,10 @@ LETd_weight1(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>&
 
 template<typename R>
 CUDA_DEVICE double
-LETd_weight2(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>& geo) {
+LETd_weight2(const track_t<R>&          trk,
+             const cnb_t&               cnb,
+             grid3d<mqi::density_t, R>& geo,
+             material_t<R>*&            mat) {
     R density;
     density = geo.get_data()[cnb];
     density *= 1000.0;
@@ -90,7 +125,9 @@ LETd_weight2(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>&
     length += (trk.vtx1.pos.y - trk.vtx0.pos.y) * (trk.vtx1.pos.y - trk.vtx0.pos.y);
     length += (trk.vtx1.pos.z - trk.vtx0.pos.z) * (trk.vtx1.pos.z - trk.vtx0.pos.z);
     length = mqi::mqi_sqrt(length);
-    if (length <= 0) { return 0.0; }
+    if (length <= 0) {
+        return 0.0;
+    }
     double let = trk.dE / length / density;
     if (let >= 25.0) {
         return 0;
@@ -101,7 +138,10 @@ LETd_weight2(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>&
 
 template<typename R>
 CUDA_DEVICE double
-LETt_weight1(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>& geo) {
+LETt_weight1(const track_t<R>&          trk,
+             const cnb_t&               cnb,
+             grid3d<mqi::density_t, R>& geo,
+             material_t<R>*&            mat) {
     R density;
     density = geo.get_data()[cnb];
     density *= 1000.0;
@@ -109,14 +149,19 @@ LETt_weight1(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>&
     length += (trk.vtx1.pos.y - trk.vtx0.pos.y) * (trk.vtx1.pos.y - trk.vtx0.pos.y);
     length += (trk.vtx1.pos.z - trk.vtx0.pos.z) * (trk.vtx1.pos.z - trk.vtx0.pos.z);
     length = mqi::mqi_sqrt(length);
-    if (length <= 0) { return 0.0; }
+    if (length <= 0) {
+        return 0.0;
+    }
     double let = trk.dE / length / density;
     return length * let;
 }
 
 template<typename R>
 CUDA_DEVICE double
-LETt_weight2(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>& geo) {
+LETt_weight2(const track_t<R>&          trk,
+             const cnb_t&               cnb,
+             grid3d<mqi::density_t, R>& geo,
+             material_t<R>*&            mat) {
     R density;
     density = geo.get_data()[cnb];
     density *= 1000.0;
@@ -125,7 +170,9 @@ LETt_weight2(const track_t<R>& trk, const cnb_t& cnb, grid3d<mqi::density_t, R>&
     length += (trk.vtx1.pos.z - trk.vtx0.pos.z) * (trk.vtx1.pos.z - trk.vtx0.pos.z);
     length = mqi::mqi_sqrt(length);
     //    if (length < 0 || mqi::mqi_abs(length) < 1e-3) { return 0.0; }
-    if (length <= 0) { return 0.0; }
+    if (length <= 0) {
+        return 0.0;
+    }
     return length;
 }
 
@@ -135,6 +182,7 @@ CUDA_DEVICE fp_compute_hit<mqi::phsp_t> energy_deposit_primary_pointer =
   mqi::energy_deposit_primary;
 CUDA_DEVICE fp_compute_hit<mqi::phsp_t> Dm_pointer           = mqi::dose_to_medium;
 CUDA_DEVICE fp_compute_hit<mqi::phsp_t> Dw_pointer           = mqi::dose_to_water;
+CUDA_DEVICE fp_compute_hit<mqi::phsp_t> Dw_square_pointer    = mqi::dose_to_water_square;
 CUDA_DEVICE fp_compute_hit<mqi::phsp_t> LETd_weight1_pointer = mqi::LETd_weight1;
 CUDA_DEVICE fp_compute_hit<mqi::phsp_t> LETd_weight2_pointer = mqi::LETd_weight2;
 CUDA_DEVICE fp_compute_hit<mqi::phsp_t> LETt_weight1_pointer = mqi::LETt_weight1;

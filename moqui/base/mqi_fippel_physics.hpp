@@ -70,41 +70,49 @@ public:
              track_stack_t<R>& stk,
              mqi_rng*          rng,
              const R&          rho_mass,
-             material_t<R>&    mat,
+             material_t<R>*    mat,
              const R&          distance_to_boundary,
              bool              score_local_deposit) {
 
-        if (trk.vtx0.ke < this->Tp_cut) {
+        if (rho_mass < 1.0e-7) {
+            /// Ignore vaccum
+            trk.update_post_vertex_position(distance_to_boundary);
+            return;
+        } else if (rho_mass > 99.9) {
+            /// Stop tracking in aperture
+            trk.stop();
+            return;
+        }
+        if (trk.vtx0.ke <= this->Tp_cut) {
             if (trk.vtx0.ke < 0) trk.vtx0.ke = 0;
             assert(trk.vtx0.ke >= 0);
             trk.deposit(trk.vtx0.ke);
             trk.update_post_vertex_energy(trk.vtx0.ke);
-            p_ion.last_step(trk, mat);
+            p_ion.last_step(trk, mat, rho_mass);
             trk.stop();
             return;
         }
-
         mqi::relativistic_quantities<R> rel(trk.vtx0.ke, units.Mp);
         R                               length = 0.0;
         ///calculate maximum possible energy-loss
         R max_loss_step    = max_energy_loss * -1.0 * rel.Ek / p_ion.dEdx(rel, mat);
         R current_min_step = this->max_step;
-        current_min_step   = current_min_step * mat.stopping_power_ratio(rel.Ek) * mat.rho_mass /
+        current_min_step   = current_min_step * mat->compute_rsp_(rho_mass, rel.Ek) * rho_mass /
                            this->units.water_density;
-        current_min_step  = (current_min_step <= max_loss_step) ? current_min_step : max_loss_step;
         R max_loss_energy = -1.0 * current_min_step * p_ion.dEdx(rel, mat);
-        R cs1[4]          = { p_ion.cross_section(rel, mat),
-                     pp_e.cross_section(rel, mat),
-                     po_e.cross_section(rel, mat),
-                     po_i.cross_section(rel, mat) };
+        R cs1[4]          = { p_ion.cross_section(rel, mat, rho_mass),
+                               pp_e.cross_section(rel, mat, rho_mass),
+                               po_e.cross_section(rel, mat, rho_mass),
+                               po_i.cross_section(rel, mat, rho_mass) };
         R cs1_sum         = cs1[0] + cs1[1] + cs1[2] + cs1[3];
 
         mqi::relativistic_quantities<R> rel_de(trk.vtx0.ke - max_loss_energy, units.Mp);
-        R                               cs2[4]  = { p_ion.cross_section(rel_de, mat),
-                     pp_e.cross_section(rel_de, mat),
-                     po_e.cross_section(rel_de, mat),
-                     po_i.cross_section(rel_de, mat) };
-        R                               cs2_sum = cs2[0] + cs2[1] + cs2[2] + cs2[3];
+
+        R cs2[4]  = { p_ion.cross_section(rel_de, mat, rho_mass),
+                       pp_e.cross_section(rel_de, mat, rho_mass),
+                       po_e.cross_section(rel_de, mat, rho_mass),
+                       po_i.cross_section(rel_de, mat, rho_mass) };
+        R cs2_sum = cs2[0] + cs2[1] + cs2[2] + cs2[3];
 
         ///< Pick bigger cross-section
         R  cs_sum = (cs1_sum >= cs2_sum) ? cs1_sum : cs2_sum;
@@ -113,9 +121,20 @@ public:
         R prob       = mqi_uniform<R>(rng);           //0-1
         R mfp        = -1.0f * logf(prob) / cs_sum;   // mm, rho_mass is g/mm^3
         R step_limit = current_min_step * this->units.water_density /
-                       (mat.stopping_power_ratio(rel.Ek) * mat.rho_mass);
+                       (mat->compute_rsp_(rho_mass, rel.Ek) * rho_mass);
+        if (std::isinf(mfp) || std::isnan(distance_to_boundary) || std::isnan(current_min_step) ||
+            std::isnan(step_limit)) {
+            printf("rho mass %f mfp %f prob %f cs_sum %f %f %f %f\n",
+                   rho_mass,
+                   mfp,
+                   prob,
+                   cs_sum,
+                   step_limit,
+                   current_min_step,
+                   rel.Ek);
+            exit(-1);
+        }
 #ifdef DEBUG
-
         printf("\tcs1: %.3f vs cs2: %.3f, prob: %.3f, mfp: %.3f\n", cs1_sum, cs2_sum, prob, mfp);
         printf(
           "\t%.3f MeV: current_min_step: %.3f, max_loss_step: %.3f, distance_to_boundary: %.3f\n",
@@ -129,26 +148,33 @@ public:
 #ifdef DEBUG
             printf("\td2b: %.3f, ke: %.3f\n", distance_to_boundary, trk.vtx0.ke);
 #endif
-
+            //            printf("Boundary\n");
             assert(!mqi::mqi_isnan(trk.vtx0.ke) && !mqi::mqi_isnan(trk.vtx1.ke));
 
-            p_ion.along_step(trk, stk, rng, distance_to_boundary, mat);
-
+            p_ion.along_step(trk, stk, rng, distance_to_boundary, mat, rho_mass);
             assert_track<R>(trk, 0);
         } else if ((mfp < distance_to_boundary ||
                     mqi::mqi_abs(mfp - distance_to_boundary) < mqi::geometry_tolerance) &&
                    (mfp < step_limit || mqi::mqi_abs(mfp - step_limit) < mqi::geometry_tolerance)) {
+            //        } else if (mfp <= distance_to_boundary && mfp <= step_limit) {
             int p = 0;
 
 #ifdef DEBUG
             printf("\tmfp: %.3f, ke: %.3f, primary:%d\n", mfp, trk.vtx0.ke, trk.primary);
-            if (mfp < 0) { printf("mfp: %.3f, ke: %.3f\n", mfp, trk.vtx0.ke); }
+            if (mfp < 0) {
+                printf("mfp: %.3f, ke: %.3f\n", mfp, trk.vtx0.ke);
+            }
 #endif
 
             assert(!mqi::mqi_isnan(trk.vtx0.ke) && !mqi::mqi_isnan(trk.vtx1.ke));
-            p_ion.along_step(trk, stk, rng, mfp, mat);
+            p_ion.along_step(trk, stk, rng, mfp, mat, rho_mass);
+            //            trk.process = mqi::CSDA;
+
             assert_track<R>(trk, 10);
-            if (trk.vtx1.ke < this->Tp_cut) { return; }
+            //            process = 15;
+            if (trk.vtx1.ke <= this->Tp_cut) {
+                return;
+            }
             R u          = cs_sum * mqi_uniform<R>(rng);   //0-1
             trk.vtx1.dir = trk.vtx0.dir;
             if (u < cs[0]) {
@@ -167,28 +193,25 @@ public:
                 p = 3;
                 po_i.post_step(trk, stk, rng, mfp, mat, score_local_deposit);
                 assert_track<R>(trk, 4);
-            } else {   //u
+            } else {
             }
-
 #ifdef DEBUG
             if (p != 0) printf("Process: %d\n", p);
 #endif
         } else {
-
 #ifdef DEBUG
             if (max_step < 0) {
                 printf("max_step: %.3f, ke: %.3f\n", distance_to_boundary, trk.vtx0.ke);
             }
 #endif
             assert(!mqi::mqi_isnan(trk.vtx0.ke) && !mqi::mqi_isnan(trk.vtx1.ke));
-            p_ion.along_step(trk, stk, rng, step_limit, mat);
+            p_ion.along_step(trk, stk, rng, step_limit, mat, rho_mass);
             assert_track<R>(trk, 5);
         }
 
 #ifdef DEBUG
         printf("\tend-of-physics:stepping\n");
 #endif
-        //don't trk.move() here
         return;
     }
 };

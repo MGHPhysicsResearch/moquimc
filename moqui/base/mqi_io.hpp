@@ -506,15 +506,9 @@ mqi::io::save_to_mhd(const mqi::node_t<R>* children,
     dy -= children->geo[0].get_y_edges()[0];
     float dz = children->geo[0].get_z_edges()[1];
     dz -= children->geo[0].get_z_edges()[0];
-    float x0 = children->geo[0].get_x_edges()[0];
-    x0 += children->geo[0].get_x_edges()[0];
-    x0 /= 2.0;
-    float y0 = children->geo[0].get_y_edges()[0];
-    y0 += children->geo[0].get_y_edges()[0];
-    y0 /= 2.0;
-    float z0 = children->geo[0].get_z_edges()[0];
-    z0 += children->geo[0].get_z_edges()[0];
-    z0 /= 2.0;
+    float x0 = children->geo[0].get_x_edges()[0]+dx*0.5;
+    float y0 = children->geo[0].get_y_edges()[0]+dy*0.5;
+    float z0 = children->geo[0].get_z_edges()[0]+dz*0.5;
     std::ofstream fid_header(filepath + "/" + filename + ".mhd", std::ios::out);
     if (!fid_header) { std::cout << "Cannot open file!" << std::endl; }
     fid_header << "ObjectType = Image\n";

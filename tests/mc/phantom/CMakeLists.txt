@@ -8,11 +8,15 @@ endif ()
 
 find_package (Python3 COMPONENTS Interpreter Development)
 
+if (APPLE)
+    find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+endif ()
+
 target_link_libraries(phantom_env PUBLIC
         moqui
         ${COREFOUNDATION_LIBRARY}
         ZLIB::ZLIB
-        )
+)
 
 #https://stackoverflow.com/questions/3065220/ctest-with-multiple-commands
 add_test(
