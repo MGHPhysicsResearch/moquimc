@@ -375,7 +375,7 @@ public:
         }
 
         int32_t* d_transport_seed;
-        gpu_err_chk(cudaMalloc(&d_transport_seed, sizeof(int32_t) * (h0-h1)));
+        gpu_err_chk(cudaMalloc(&d_transport_seed, sizeof(int32_t) * (h1-h0)));
         gpu_err_chk(cudaMemcpy(d_transport_seed,
                                transport_seed,
                                sizeof(int32_t) * h1,
