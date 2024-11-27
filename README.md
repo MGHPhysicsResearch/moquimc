@@ -14,6 +14,7 @@ MOnte carlo code for QUIck proton dose calculation (moqui)
   - GDCM v2 and CUDA v10.2 on Ubuntu 20.04
   - GDCM v3 and CUDA v11.8 on Ubuntu 22.04
   - GDCM v3 and CUDA v8.0 on Ubuntu 22.04
+  - GDCM v3 and CUDA v12.6 on Alma Linux 9
 - ZLIB
 - Python3 (for phantom example)
 
@@ -95,8 +96,8 @@ Add:
 ```
 - See https://github.com/clangd/clangd/issues/858 and https://github.com/clangd/clangd/issues/1815
 
-For a Volta GPU:
-- `cmake -DCUDAToolkit_ROOT=/usr/local/cuda-12.6 -DCMAKE_CUDA_ARCHITECTURES=90 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12.6/bin/nvcc`
+For a Volta GPU NVIDIA A40:
+- `cmake -DCUDAToolkit_ROOT=/usr/local/cuda-12.6 -DCMAKE_CUDA_ARCHITECTURES=86 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12.6/bin/nvcc`
 
 ### Acknowledgements
 This work is supported by NIH/NCI R01 234210 "Fast Individualized Delivery Adaptation in Proton Therapy"
