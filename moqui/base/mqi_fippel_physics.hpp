@@ -122,7 +122,7 @@ public:
         R mfp        = -1.0f * logf(prob) / cs_sum;   // mm, rho_mass is g/mm^3
         R step_limit = current_min_step * this->units.water_density /
                        (mat->compute_rsp_(rho_mass, rel.Ek) * rho_mass);
-        #if CUDART_VERSION > 2000 // prevent weird illegal mem access in old versions
+        #if CUDART_VERSION > 8000 // prevent weird illegal mem access in old versions
         if (std::isinf(mfp) || std::isnan(distance_to_boundary) || std::isnan(current_min_step) ||
             std::isnan(step_limit)) {
             printf("rho mass %f mfp %f prob %f cs_sum %f %f %f %f\n",
