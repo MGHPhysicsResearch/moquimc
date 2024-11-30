@@ -88,11 +88,10 @@ public:
             spot_position[2] = 0.0;
         }
 
-        ///< Beam position
+        ///< Beam spatial spread
         if (cli["--spot_size"].size() >= 1) {
             spot_size[0] = std::stof(cli["--spot_size"][0]);
             spot_size[1] = std::stof(cli["--spot_size"][1]);
-
         } else {
             spot_size[0] = 0.0;
             spot_size[1] = 0.0;
@@ -153,12 +152,12 @@ public:
             this->output_path = cli["--output_prefix"][0];
             printf("%s\n", this->output_path.c_str());
         } else {
-            throw std::runtime_error("output_path is required.");
+            throw std::runtime_error("output_prefix is required.");
         }
 
         if (cli["--phantom_path"].size() >= 1) {
             this->phantom_path = cli["--phantom_path"][0];
-            printf("phantom path: %s\n", this->output_path.c_str());
+            printf("phantom path: %s\n", this->phantom_path.c_str());
         } else {
             throw std::runtime_error("phantom_path is required.");
         }
@@ -207,7 +206,7 @@ public:
         mqi::coordinate_transform<R> p_coord(spot_angles, { 0, 0, 0 });   //angles, isocenter
         /// Source direction is -Z
         mqi::vec3<R> dir(0, 0, -1);
-        ///< Beamlet phse-space distribution
+        ///< Beamlet phase-space distribution
         std::array<R, 6> beamlet_mean = {
             spot_position[0], spot_position[1], spot_position[2], dir.x, dir.y, dir.z
         };
@@ -268,6 +267,10 @@ public:
         mqi::patient_material_t<R> patient_material;
         int16_t*                   ph = new int16_t[nxyz.x * nxyz.y * nxyz.z];
         std::ifstream              ph_fid(this->phantom_path, std::ios::in | std::ios::binary);
+        if(!ph_fid.good())
+        {
+            throw std::runtime_error("phantom file does not exist");
+        }
         ph_fid.read((char*) (&ph[0]), nxyz.x * nxyz.y * nxyz.z * sizeof(ph[0]));
         ph_fid.close();
         for (int i = 0; i < nxyz.x * nxyz.y * nxyz.z; i++) {
@@ -372,7 +375,7 @@ public:
         }
 
         int32_t* d_transport_seed;
-        gpu_err_chk(cudaMalloc(&d_transport_seed, sizeof(int32_t) * (h0-h1)));
+        gpu_err_chk(cudaMalloc(&d_transport_seed, sizeof(int32_t) * (h1-h0)));
         gpu_err_chk(cudaMemcpy(d_transport_seed,
                                transport_seed,
                                sizeof(int32_t) * h1,

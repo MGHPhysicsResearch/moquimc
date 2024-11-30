@@ -20,7 +20,7 @@ template<typename R>
 class physics_list
 {
 public:
-    const physics_constants<R> units;
+    const physics_constants<R> units {};
     R       Te_cut   = 0.08511 * units.MeV;   //0.1 will set mpf 0 up to 45 MeV proton
     const R Tp_cut   = 0.5 * units.MeV;
     const R Tp_max   = 330.0 * units.MeV;   // maximum proton energy to deal

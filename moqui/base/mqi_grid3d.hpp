@@ -549,7 +549,7 @@ public:
             }
         } else {
             d.x     = 0;
-            t_min.x = mqi::m_inf;
+            t_min.x = mqi_m_inf;
             t_max.x = mqi::p_inf;
         }   //----< X
 
@@ -575,7 +575,7 @@ public:
             }
         } else {
             d.y     = 0;
-            t_min.y = mqi::m_inf;
+            t_min.y = mqi_m_inf;
             t_max.y = mqi::p_inf;
         }   //----< Y
         ///< check Z (3rd) axis
@@ -600,7 +600,7 @@ public:
             }
         } else {
             d.z     = 0;
-            t_min.z = mqi::m_inf;
+            t_min.z = mqi_m_inf;
             t_max.z = mqi::p_inf;
         }
 
@@ -671,7 +671,7 @@ public:
         } else {
             // direction is near zero
             d.x     = 0;
-            t_min.x = mqi::m_inf;
+            t_min.x = mqi_m_inf;
             t_max.x = mqi::p_inf;
         }   //----< X
 
@@ -690,7 +690,7 @@ public:
             }
         } else {
             d.y     = 0;
-            t_min.y = mqi::m_inf;
+            t_min.y = mqi_m_inf;
             t_max.y = mqi::p_inf;
         }   //----< Y
         ///< check Z (3rd) axis
@@ -708,7 +708,7 @@ public:
             }
         } else {
             d.z     = 0;
-            t_min.z = mqi::m_inf;
+            t_min.z = mqi_m_inf;
             t_max.z = mqi::p_inf;
         }
 

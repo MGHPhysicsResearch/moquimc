@@ -20,7 +20,7 @@ const float min_step           = 1e-3;
 const float geometry_tolerance = 1e-3;
 
 ///< TODO: CUDA m_inf
-const float m_inf = -1.0 * HUGE_VALF;
+#define mqi_m_inf (-1.0 * HUGE_VALF);
 const float p_inf = HUGE_VALF;
 
 template<typename T>

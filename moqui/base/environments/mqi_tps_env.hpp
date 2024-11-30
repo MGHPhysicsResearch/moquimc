@@ -4,20 +4,11 @@
 #include <moqui/base/environments/mqi_xenvironment.hpp>
 #include <moqui/base/scorers/mqi_scorer_energy_deposit.hpp>
 
-#include "gdcmAttribute.h"
-#include "gdcmDataElement.h"
+
 #include "gdcmDataSet.h"
-#include "gdcmDict.h"
-#include "gdcmDicts.h"
-#include "gdcmGlobal.h"
-#include "gdcmIPPSorter.h"
-#include "gdcmImage.h"
 #include "gdcmReader.h"
 #include "gdcmScanner.h"
-#include "gdcmSorter.h"
-#include "gdcmStringFilter.h"
 #include "gdcmTag.h"
-#include "gdcmTesting.h"
 #include <cassert>
 #include <chrono>
 #include <ctime>

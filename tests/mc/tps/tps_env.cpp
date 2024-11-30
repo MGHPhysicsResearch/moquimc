@@ -5,21 +5,6 @@
 #include <moqui/base/environments/mqi_tps_env.hpp>
 #include <moqui/base/mqi_cli.hpp>
 
-#include "gdcmAttribute.h"
-#include "gdcmDataElement.h"
-#include "gdcmDataSet.h"
-#include "gdcmDict.h"
-#include "gdcmDicts.h"
-#include "gdcmGlobal.h"
-#include "gdcmIPPSorter.h"
-#include "gdcmImage.h"
-#include "gdcmReader.h"
-#include "gdcmScanner.h"
-#include "gdcmSorter.h"
-#include "gdcmStringFilter.h"
-#include "gdcmTag.h"
-#include "gdcmTesting.h"
-
 typedef float phsp_t;
 
 int

@@ -244,6 +244,7 @@ public:
         if (fid.is_open()) {
             while (getline(fid, line)) {
                 if (line.size() == 0) continue;
+                if(line.find_first_not_of(" \f\n\r\t\v\0\\")==std::string::npos) continue;
                 line = trim_copy(line);
                 if (line.at(0) == '#') continue;
                 comment = line.find("#");
@@ -288,7 +289,7 @@ public:
             pos = parameters_total[line].find(delimeter);
             if (pos != std::string::npos) {
                 option_in = trim_copy(parameters_total[line].substr(0, pos));
-                if (strcasecmp(option.c_str(), option_in.c_str()) == 0) {
+                if (strcasecmp(option.c_str(), option_in.c_str()) == 0 && (pos+1) != parameters_total[line].length() && parameters_total[line].substr(pos + 1, std::string::npos).find_first_not_of(" \f\n\r\t\v\0\\")!=std::string::npos) {
                     value = trim_copy(parameters_total[line].substr(pos + 1, std::string::npos));
                     return value;
                 }

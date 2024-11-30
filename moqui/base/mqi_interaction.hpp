@@ -20,7 +20,7 @@ template<typename R, mqi::particle_t P>
 class interaction
 {
 public:
-    const physics_constants<R> units;
+    const physics_constants<R> units {};
 #ifdef __PHYSICS_DEBUG__
     R T_cut = 0.08511 * units.MeV;   //0.083 MeV for electron cut, 0.01 MeV cut for Proton
 #else
